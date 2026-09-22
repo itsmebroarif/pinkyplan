@@ -5,7 +5,10 @@
 import { getState } from "../store.js";
 import { navigationConfig, appConfig } from "../config.js";
 import { el, formatDateLong, escapeHtml } from "../helpers.js";
-import { openModal, closeModal } from "./modal.js";
+import { openModal, closeModal, confirmDialog } from "./modal.js";
+import { logout } from "../modules/auth.js";
+import { navigate } from "../router.js";
+import { toast } from "./ui.js";
 
 /**
  * Render navbar atas.
@@ -47,8 +50,7 @@ export function renderNavbar() {
         </div>
     `);
 
-    right.querySelector("#notif-btn")?.addEventListener("click", async () => {
-        const { toast } = await import("./ui.js");
+    right.querySelector("#notif-btn")?.addEventListener("click", () => {
         toast("Tidak ada notifikasi baru 💤", "info");
     });
 
@@ -77,17 +79,13 @@ function openProfileMenu() {
         actions: [{ label: "Tutup" }]
     });
 
-    document.getElementById("profile-settings")?.addEventListener("click", async () => {
+    document.getElementById("profile-settings")?.addEventListener("click", () => {
         closeModal();
-        const { navigate } = await import("../router.js");
         navigate("/settings");
     });
 
     document.getElementById("profile-logout")?.addEventListener("click", async () => {
         closeModal();
-        const { confirmDialog } = await import("./modal.js");
-        const { logout } = await import("../modules/auth.js");
-        const { navigate } = await import("../router.js");
         const ok = await confirmDialog("Logout dari akun ini?", {
             title: "🚪 Logout",
             confirmLabel: "Ya, logout",
@@ -96,6 +94,7 @@ function openProfileMenu() {
         if (ok) {
             logout();
             navigate("/dashboard", { replace: true });
+            toast("Berhasil logout 👋", "info");
         }
     });
 }

@@ -352,11 +352,11 @@ async function main() {
         navigate(path === "/" || path === "/404" ? "/dashboard" : path, { replace: true });
     }, 200);
 
-    // Close sidebar saat klik konten di tablet
+    // Close sidebar drawer saat klik di luar (tablet, jika dibuka programatik)
     document.addEventListener("click", (e) => {
         const sidebar = document.getElementById("sidebar");
         if (!sidebar?.classList.contains("open")) return;
-        if (!sidebar.contains(e.target) && !e.target.closest("#menu-btn")) closeSidebar();
+        if (!sidebar.contains(e.target)) closeSidebar();
     });
 
     // Refresh chrome saat resize (bottom nav visibility)

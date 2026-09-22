@@ -217,6 +217,19 @@
     box-shadow: var(--shadow-xs);
     font-weight: 800;
     font-size: 0.88rem;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    min-height: 44px;
+}
+
+.user-chip:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: var(--shadow-sm);
+}
+
+.user-chip:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
 }
 
 .user-chip .avatar {
@@ -228,6 +241,12 @@
     border: 2px solid var(--ink);
     border-radius: 50%;
     font-size: 0.95rem;
+}
+
+.user-chip .chip-caret {
+    font-size: 0.7rem;
+    opacity: 0.7;
+    margin-left: 0.1rem;
 }
 
 /* ---------- Page content ---------- */

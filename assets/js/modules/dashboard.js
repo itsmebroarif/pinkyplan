@@ -2,7 +2,15 @@
  * Dashboard — greeting, quote, progress, schedule, hydration, quick todo.
  */
 import { getState, filterTodos, getSchedulesByDate, addTodo, getHydration, addWater } from "../store.js";
-import { getGreeting, formatDateLong, toISODate, escapeHtml, calcProgress, formatDateShort } from "../helpers.js";
+import {
+    getGreeting,
+    formatDateLong,
+    toISODate,
+    escapeHtml,
+    calcProgress,
+    getTimePeriod,
+    formatClock
+} from "../helpers.js";
 import { getDailyQuote, loadQuotes, quoteCardHtml } from "./quote.js";
 import { openTodoModal, paintTodoList } from "./todo.js";
 import { openScheduleModal } from "./schedule.js";
@@ -10,6 +18,54 @@ import { openModal, closeModal } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { navigate } from "../router.js";
 import { hydrationConfig } from "../config.js";
+
+/** @type {number|null} Interval live clock dashboard. */
+let clockTimer = null;
+
+/**
+ * Hentikan live clock dashboard.
+ */
+function stopDashboardClock() {
+    if (clockTimer !== null) {
+        clearInterval(clockTimer);
+        clockTimer = null;
+    }
+}
+
+/**
+ * Mulai live clock: jam HH:MM:SS + label pagi/siang/sore/malam.
+ *
+ * @param {HTMLElement} container - Page content.
+ */
+function startDashboardClock(container) {
+    stopDashboardClock();
+
+    const tick = () => {
+        const now = new Date();
+        const period = getTimePeriod(now);
+        const timeEl = container.querySelector("#dash-clock-time");
+        const periodEl = container.querySelector("#dash-clock-period");
+        const greetEl = container.querySelector("#dash-greet-line");
+        const user = getState().currentUser;
+
+        if (timeEl) timeEl.textContent = formatClock(now);
+        if (periodEl) {
+            periodEl.innerHTML = `<span class="period-icon" aria-hidden="true">${period.icon}</span> ${period.label}`;
+            periodEl.dataset.period = period.id;
+        }
+        if (greetEl) {
+            greetEl.innerHTML = `${getGreeting(now)}, ${escapeHtml(user ? user.name : "Friend")}! ${user && user.id === "arif" ? "💙" : "💗"}`;
+        }
+
+        // Auto stop jika sudah pindah halaman
+        if (!container.querySelector("#dash-clock-time")) {
+            stopDashboardClock();
+        }
+    };
+
+    tick();
+    clockTimer = setInterval(tick, 1000);
+}
 
 /**
  * Render halaman Dashboard.
@@ -25,12 +81,22 @@ export async function renderDashboard(container) {
     const schedules = getSchedulesByDate(today);
     const hydration = getHydration();
     const quote = await getDailyQuote(await loadQuotes());
+    const now = new Date();
+    const period = getTimePeriod(now);
 
     container.innerHTML = `
         <div class="page-enter">
             <section class="dash-greeting">
-                <div class="g-day">${new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(new Date())}</div>
-                <h1>${getGreeting()}, ${escapeHtml(user ? user.name : "Friend")}! ${user && user.id === "arif" ? "💙" : "💗"}</h1>
+                <div class="g-top">
+                    <div class="g-day">${new Intl.DateTimeFormat("en-US", { weekday: "long" }).format(now)}</div>
+                    <div class="dash-clock" id="dash-clock" aria-live="off">
+                        <div class="dash-clock-time pixel-font" id="dash-clock-time">${formatClock(now)}</div>
+                        <div class="dash-clock-period" id="dash-clock-period" data-period="${period.id}">
+                            <span class="period-icon" aria-hidden="true">${period.icon}</span> ${period.label}
+                        </div>
+                    </div>
+                </div>
+                <h1 id="dash-greet-line">${getGreeting(now)}, ${escapeHtml(user ? user.name : "Friend")}! ${user && user.id === "arif" ? "💙" : "💗"}</h1>
                 <div class="g-date">${formatDateLong()}</div>
             </section>
 
@@ -149,6 +215,7 @@ export async function renderDashboard(container) {
     `;
 
     paintDashboardTodos(container);
+    startDashboardClock(container);
 
     container.querySelector("#dash-add-todo")?.addEventListener("click", () => openTodoModal());
     container.querySelector("#dash-add-sched")?.addEventListener("click", () => openScheduleModal(null, today));

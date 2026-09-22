@@ -84,6 +84,37 @@ export function getGreeting(date = new Date()) {
 }
 
 /**
+ * Nama periode waktu (Bahasa Indonesia) + ikon.
+ *
+ * pagi 04:00–10:59 · siang 11:00–14:59 · sore 15:00–18:59 · malam 19:00–03:59
+ *
+ * @param {Date} [date=new Date()] - Waktu sekarang.
+ * @returns {{id:string, label:string, icon:string}}
+ */
+export function getTimePeriod(date = new Date()) {
+    const h = date.getHours();
+    if (h >= 4 && h < 11) return { id: "pagi", label: "Pagi", icon: "🌅" };
+    if (h >= 11 && h < 15) return { id: "siang", label: "Siang", icon: "☀️" };
+    if (h >= 15 && h < 19) return { id: "sore", label: "Sore", icon: "🌇" };
+    return { id: "malam", label: "Malam", icon: "🌙" };
+}
+
+/**
+ * Format jam digital HH:MM:SS (lokal id-ID).
+ *
+ * @param {Date} [date=new Date()] - Waktu sekarang.
+ * @returns {string} Contoh: "14:32:05".
+ */
+export function formatClock(date = new Date()) {
+    return new Intl.DateTimeFormat("id-ID", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: false
+    }).format(date);
+}
+
+/**
  * Merge target dengan default secara deep sederhana (1 level).
  *
  * @param {Object} defaults - Object default.

@@ -16,8 +16,10 @@ import { renderSchedulePage, openScheduleModal } from "./modules/schedule.js";
 import { renderCalendarPage } from "./modules/calendar.js";
 import { renderActivityPage, openCategoryModal } from "./modules/activity.js";
 import { renderHydrationPage } from "./modules/hydration.js";
+import { renderMealPage, openMealModal, checkMealWarning } from "./modules/meal.js";
 import { renderStatisticsPage } from "./modules/statistics.js";
 import { renderQuotesPage } from "./modules/quote.js";
+import { renderGamesPage } from "./modules/games.js";
 import { renderSettingsPage } from "./modules/settings.js";
 import { toast } from "./components/ui.js";
 import { toISODate, escapeHtml } from "./helpers.js";
@@ -82,7 +84,7 @@ function handleBottomNavAction(action) {
 /**
  * Handle aksi FAB quick menu.
  *
- * @param {string} kind - "todo" | "schedule" | "category" | "water".
+ * @param {string} kind - "todo" | "schedule" | "category" | "water" | "meal".
  */
 function handleQuickAdd(kind) {
     switch (kind) {
@@ -100,6 +102,9 @@ function handleQuickAdd(kind) {
             toast(`💧 ${h.count}/${h.goal} gelas`, "success", 1500);
             break;
         }
+        case "meal":
+            openMealModal(() => refreshCurrentPage());
+            break;
         default:
             break;
     }
@@ -133,8 +138,10 @@ function setupRoutes() {
         calendar: (c) => renderCalendarPage(c),
         activity: (c) => renderActivityPage(c),
         hydration: (c) => renderHydrationPage(c),
+        meal: (c) => renderMealPage(c),
         statistics: (c) => renderStatisticsPage(c),
         quotes: (c) => renderQuotesPage(c),
+        games: (c) => renderGamesPage(c),
         settings: (c) => renderSettingsPage(c)
     };
 
@@ -371,6 +378,8 @@ async function main() {
 
     initThreeBackground();
     startHydrationReminders();
+    checkMealWarning();
+    setInterval(checkMealWarning, 60000);
     registerSW();
 }
 

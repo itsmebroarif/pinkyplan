@@ -12,6 +12,8 @@ Aplikasi ini dirancang untuk mengelola:
 * 🗓 Calendar
 * 🎯 Activity / Category
 * 💧 Hydration
+* 🍽️ Meal Tracker (min 3×/hari, warning jam 20:00, download PNG)
+* 🎮 Games — 3 world 3D (Taman, Server, Kota) via Three.js
 * 💬 Daily Quote
 * 📊 Productivity Statistics
 * 📦 JSON Import / Export
@@ -203,10 +205,11 @@ Three.js digunakan untuk visual enhancement:
 * decorative animation
 * cute mascot
 * ambient background
+* **mini-games 3D** (Taman / Server / Kota) di menu **Games**
 
 Three.js tidak digunakan sebagai dependency utama aplikasi.
 
-Aplikasi tetap harus berjalan tanpa WebGL.
+Aplikasi tetap harus berjalan tanpa WebGL (background &amp; games fallback aman).
 
 ---
 
@@ -344,8 +347,10 @@ Aplikasi menggunakan **hash routing** secara default agar aman di static server 
 /#/calendar
 /#/activity
 /#/hydration
+/#/meal
 /#/statistics
 /#/quotes
+/#/games
 /#/settings
 ```
 
@@ -822,4 +827,31 @@ Semua perubahan penting dicatat di sini.
 - **`Cannot GET /dashboard`** — router default sekarang **hash routing** (`/#/dashboard`) sehingga refresh / buka URL tidak lagi request path ke server; History API hanya dipakai jika server sudah mendukung deep-link.
 - Reset data & import JSON wajib konfirmasi.
 - Klik link internal SPA tanpa full page reload.
+
+---
+
+## [1.1.0] — 2026-09-23
+
+### Added
+
+- **Quote Indonesia bertema pacaran sehat** — `data/quotes.json` + fallback diganti 30 quote ID; fetch selalu ulang (cache English lama diabaikan).
+- **Meal Tracker** (`/#/meal`):
+  - Target minimal **3× makan/hari** (boleh lebih), progress bar, preset cepat.
+  - Tambah/hapus meal (nama, jam, catatan).
+  - **Download PNG** daftar makan hari ini (canvas, theme-aware).
+  - **Warning jam 20:00** bila masih &lt; 3× (toast 1×/hari + banner di Meal & Dashboard).
+  - Widget **Meal Hari Ini** di dashboard; quick-add via FAB.
+  - Ikut **export/import JSON** + reset data.
+- **Menu Games** (`/#/games`) — Material Design 3, hero gradient vibrant:
+  - **3 world 3D full Three.js**: 🌳 Keliling Taman, 🖥️ Area Server, 🏙️ Keliling Kota.
+  - Mode **jalan-jalan santai**, tanpa game over.
+  - Kontrol desktop: **WASD/panah + mouse drag/pointer lock + Shift lari**.
+  - Kontrol mobile **portrait**: **analog virtual** kiri, geser layar untuk look, tombol 🚀 lari.
+  - HUD MD3 (keluar, koordinat, toggle lari), fog, lampu, animasi LED/neon, head-bob.
+  - Three.js lazy-load dari CDN dengan fallback error toast.
+
+### Changed
+
+- Navigasi desktop/mobile bertambah item **Games** via `navigationConfig` (tanpa ubah HTML).
+- `formatDateShort()` default ke `new Date()` (perbaiki `Invalid time value` di download meal).
 

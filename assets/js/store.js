@@ -14,6 +14,7 @@ const appState = {
     todos: [],
     schedules: [],
     hydration: null,
+    meals: [],
     settings: {},
     quotes: [],
     statsHistory: {}
@@ -61,6 +62,7 @@ export function loadState() {
     });
     appState.quotes = storage.get("quotes", []);
     appState.statsHistory = storage.get("statsHistory", {});
+    appState.meals = storage.get("meals", []);
 
     const today = toISODate();
     const savedHydration = storage.get("hydration", null);
@@ -88,6 +90,7 @@ function persistAll() {
     storage.set("settings", appState.settings);
     storage.set("quotes", appState.quotes);
     storage.set("statsHistory", appState.statsHistory);
+    storage.set("meals", appState.meals);
 }
 
 /** @returns {Object} Salinan state saat ini. */
@@ -464,6 +467,55 @@ function persistHydration() {
     storage.set("hydration", appState.hydration);
 }
 
+/* ---------------- Meals ---------------- */
+
+/**
+ * Meal pada tanggal tertentu.
+ *
+ * @param {string} [date=toISODate()] - ISO date.
+ * @returns {Array} Daftar meal (urut waktu).
+ */
+export function getMealsByDate(date = toISODate()) {
+    return appState.meals
+        .filter((m) => m.date === date)
+        .sort((a, b) => (a.time || "").localeCompare(b.time || ""));
+}
+
+/**
+ * Tambah meal.
+ *
+ * @param {{name:string, time?:string, note?:string, date?:string}} data - Data meal.
+ * @returns {Object} Meal baru.
+ */
+export function addMeal(data) {
+    const now = new Date();
+    const meal = {
+        id: uid("MEA"),
+        date: data.date || toISODate(),
+        name: data.name.trim(),
+        time:
+            data.time ||
+            `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
+        note: data.note || "",
+        createdAt: now.toISOString()
+    };
+    appState.meals.push(meal);
+    storage.set("meals", appState.meals);
+    notify();
+    return meal;
+}
+
+/**
+ * Hapus meal by id.
+ *
+ * @param {string} id - ID meal.
+ */
+export function removeMeal(id) {
+    appState.meals = appState.meals.filter((m) => m.id !== id);
+    storage.set("meals", appState.meals);
+    notify();
+}
+
 /* ---------------- Settings ---------------- */
 
 /**
@@ -517,6 +569,7 @@ export function exportData() {
         schedules: appState.schedules,
         todos: appState.todos,
         hydration: appState.hydration,
+        meals: appState.meals,
         statsHistory: appState.statsHistory
     };
 }
@@ -543,6 +596,7 @@ export function importData(payload) {
     appState.schedules = payload.schedules;
     if (payload.settings) appState.settings = { ...appState.settings, ...payload.settings };
     if (payload.statsHistory) appState.statsHistory = payload.statsHistory;
+    if (Array.isArray(payload.meals)) appState.meals = payload.meals;
     persistAll();
     notify();
     return true;
@@ -556,6 +610,7 @@ export function resetAllData() {
     appState.todos = [];
     appState.schedules = [];
     appState.statsHistory = {};
+    appState.meals = [];
     appState.settings = { theme: null, animation: true, notifications: false, hydrationGoal: hydrationConfig.dailyGoal };
     appState.hydration = {
         date: toISODate(),

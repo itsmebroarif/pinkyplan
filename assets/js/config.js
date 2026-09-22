@@ -13,6 +13,8 @@ export const appConfig = {
         threeJs: true,
         d3: true,
         hydration: true,
+        meal: true,
+        games: true,
         notifications: true,
         pwa: false
     }
@@ -52,8 +54,10 @@ export const navigationConfig = [
     { id: "calendar", label: "Calendar", icon: "🗓️", route: "/calendar", mobile: true, desktop: true },
     { id: "activity", label: "Activity", icon: "🎯", route: "/activity", mobile: false, desktop: true },
     { id: "hydration", label: "Hydration", icon: "💧", route: "/hydration", mobile: false, desktop: true },
+    { id: "meal", label: "Meal", icon: "🍽️", route: "/meal", mobile: false, desktop: true },
     { id: "statistics", label: "Statistics", icon: "📊", route: "/statistics", mobile: false, desktop: true },
     { id: "quotes", label: "Quotes", icon: "💬", route: "/quotes", mobile: false, desktop: true },
+    { id: "games", label: "Games", icon: "🎮", route: "/games", mobile: true, desktop: true },
     { id: "settings", label: "Settings", icon: "⚙️", route: "/settings", mobile: true, desktop: true }
 ];
 
@@ -90,6 +94,15 @@ export const hydrationConfig = {
     glassSize: 250,
     unit: "ml",
     reminders: ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]
+};
+
+/**
+ * Konfigurasi meal tracker — minimal 3× makan per hari (boleh lebih).
+ */
+export const mealConfig = {
+    dailyMin: 3,
+    warnHour: 20,
+    presets: ["Sarapan", "Makan Siang", "Makan Malam", "Camilan", "Minum Susu"]
 };
 
 /**

@@ -48,7 +48,7 @@ export function formatDateLong(date = new Date()) {
  * @param {Date|string} date - Tanggal.
  * @returns {string} Contoh: "23 Sep 2026".
  */
-export function formatDateShort(date) {
+export function formatDateShort(date = new Date()) {
     return new Intl.DateTimeFormat("id-ID", {
         day: "numeric",
         month: "short",

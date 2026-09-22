@@ -1,7 +1,7 @@
 /**
  * Dashboard — greeting, quote, progress, schedule, hydration, quick todo.
  */
-import { getState, filterTodos, getSchedulesByDate, addTodo, getHydration, addWater } from "../store.js";
+import { getState, filterTodos, getSchedulesByDate, addTodo, getHydration, addWater, getMealsByDate } from "../store.js";
 import {
     getGreeting,
     formatDateLong,
@@ -17,7 +17,8 @@ import { openScheduleModal } from "./schedule.js";
 import { openModal, closeModal } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { navigate } from "../router.js";
-import { hydrationConfig } from "../config.js";
+import { hydrationConfig, mealConfig } from "../config.js";
+import { shouldWarnMeals, openMealModal } from "./meal.js";
 
 /** @type {number|null} Interval live clock dashboard. */
 let clockTimer = null;
@@ -80,8 +81,11 @@ export async function renderDashboard(container) {
     const progress = calcProgress(todosToday);
     const schedules = getSchedulesByDate(today);
     const hydration = getHydration();
-    const quote = await getDailyQuote(await loadQuotes());
     const now = new Date();
+    const meals = getMealsByDate(today);
+    const mealPct = Math.min(100, Math.round((meals.length / mealConfig.dailyMin) * 100));
+    const mealWarn = shouldWarnMeals(now);
+    const quote = await getDailyQuote(await loadQuotes());
     const period = getTimePeriod(now);
 
     container.innerHTML = `
@@ -101,6 +105,20 @@ export async function renderDashboard(container) {
             </section>
 
             <div class="dash-grid">
+                ${
+                mealWarn
+                    ? `
+                <div class="card span-full meal-warning" role="alert" style="margin:0">
+                    <span class="mw-icon" aria-hidden="true">⚠️</span>
+                    <div>
+                        <strong>Sudah lewat ${String(mealConfig.warnHour).padStart(2, "0")}:00</strong>
+                        <p>Baru ${meals.length}× makan hari ini (minimal ${mealConfig.dailyMin}×). Makan dulu ya! 💗</p>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-primary" id="dash-meal-warn">＋ Makan</button>
+                </div>`
+                    : ""
+                }
+
                 <div class="card hoverable span-full" id="dash-quote-card">
                     <div class="card-header">
                         <div class="card-title">💬 Quote of the Day</div>
@@ -182,6 +200,38 @@ export async function renderDashboard(container) {
 
                 <div class="card hoverable">
                     <div class="card-header">
+                        <div class="card-title">🍽️ Meal Hari Ini</div>
+                        <span class="badge ${meals.length >= mealConfig.dailyMin ? "success" : "pink"}" id="dash-meal-badge">${meals.length}/${mealConfig.dailyMin}</span>
+                    </div>
+                    <p class="hydro-stat" id="dash-meal-stat">${meals.length} / ${mealConfig.dailyMin} kali makan</p>
+                    <div class="progress">
+                        <div class="progress-bar" id="dash-meal-bar" style="width:${mealPct}%"></div>
+                    </div>
+                    <div id="dash-meal-list" style="margin-top:0.7rem">
+                        ${
+                        meals.length
+                            ? meals
+                                .slice(0, 4)
+                                .map(
+                                    (m) => `
+                                <div class="upcoming-item">
+                                    <span class="u-time">${escapeHtml(m.time || "--:--")}</span>
+                                    <span>🍴 ${escapeHtml(m.name)}</span>
+                                </div>
+                            `
+                                )
+                                .join("")
+                            : `<p class="text-muted" style="font-size:0.88rem;font-weight:700">Belum ada makan tercatat 🍽️</p>`
+                    }
+                    </div>
+                    <div style="display:flex;gap:0.5rem;margin-top:0.9rem;justify-content:center;flex-wrap:wrap">
+                        <button type="button" class="btn btn-primary btn-sm" id="dash-meal-add">🍴 + Makan</button>
+                        <button type="button" class="btn btn-ghost btn-sm" data-goto="/meal">Buka meal →</button>
+                    </div>
+                </div>
+
+                <div class="card hoverable">
+                    <div class="card-header">
                         <div class="card-title">📈 Quick Stats</div>
                     </div>
                     <div class="stat-grid">
@@ -219,6 +269,8 @@ export async function renderDashboard(container) {
 
     container.querySelector("#dash-add-todo")?.addEventListener("click", () => openTodoModal());
     container.querySelector("#dash-add-sched")?.addEventListener("click", () => openScheduleModal(null, today));
+    container.querySelector("#dash-meal-add")?.addEventListener("click", () => openMealModal(() => paintDashboardMeals(container)));
+    container.querySelector("#dash-meal-warn")?.addEventListener("click", () => openMealModal(() => paintDashboardMeals(container)));
 
     container.querySelector("#dash-quick-form")?.addEventListener("submit", (e) => {
         e.preventDefault();
@@ -258,6 +310,41 @@ export async function renderDashboard(container) {
     container.querySelectorAll("[data-goto]").forEach((btn) => {
         btn.addEventListener("click", () => navigate(btn.dataset.goto));
     });
+}
+
+/**
+ * Paint ulang widget meal di dashboard.
+ *
+ * @param {HTMLElement} container - Page content.
+ */
+function paintDashboardMeals(container) {
+    const meals = getMealsByDate(toISODate());
+    const min = mealConfig.dailyMin;
+    const badge = container.querySelector("#dash-meal-badge");
+    if (badge) {
+        badge.textContent = `${meals.length}/${min}`;
+        badge.className = `badge ${meals.length >= min ? "success" : "pink"}`;
+    }
+    const stat = container.querySelector("#dash-meal-stat");
+    if (stat) stat.textContent = `${meals.length} / ${min} kali makan`;
+    const bar = container.querySelector("#dash-meal-bar");
+    if (bar) bar.style.width = `${Math.min(100, Math.round((meals.length / min) * 100))}%`;
+    const list = container.querySelector("#dash-meal-list");
+    if (list) {
+        list.innerHTML = meals.length
+            ? meals
+                .slice(0, 4)
+                .map(
+                    (m) => `
+                <div class="upcoming-item">
+                    <span class="u-time">${escapeHtml(m.time || "--:--")}</span>
+                    <span>🍴 ${escapeHtml(m.name)}</span>
+                </div>
+            `
+                )
+                .join("")
+            : `<p class="text-muted" style="font-size:0.88rem;font-weight:700">Belum ada makan tercatat 🍽️</p>`;
+    }
 }
 
 /**

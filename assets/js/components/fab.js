@@ -9,7 +9,7 @@ let menuOpen = false;
 /**
  * Init FAB — toggle quick menu.
  *
- * @param {Function} onAdd - Callback jenis aksi: "todo" | "schedule" | "category".
+ * @param {Function} onAdd - Callback jenis aksi: "todo" | "schedule" | "category" | "water" | "meal".
  */
 export function initFab(onAdd) {
     const fab = document.getElementById("fab");
@@ -20,7 +20,8 @@ export function initFab(onAdd) {
         { id: "todo", icon: "📋", label: "Add Todo" },
         { id: "schedule", icon: "📅", label: "Add Schedule" },
         { id: "category", icon: "🎯", label: "Add Activity" },
-        { id: "water", icon: "💧", label: "Add Water" }
+        { id: "water", icon: "💧", label: "Add Water" },
+        { id: "meal", icon: "🍽️", label: "Add Meal" }
     ];
 
     quick.innerHTML = "";

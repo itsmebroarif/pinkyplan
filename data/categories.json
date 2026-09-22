@@ -1,0 +1,10 @@
+[
+  { "id": "exercise", "name": "Olahraga", "icon": "🏃", "color": "#FF69B4", "active": true },
+  { "id": "vacation", "name": "Liburan", "icon": "🏖️", "color": "#9B5DE5", "active": true },
+  { "id": "study", "name": "Belajar", "icon": "📚", "color": "#4DA6FF", "active": true },
+  { "id": "work", "name": "Kerja", "icon": "💼", "color": "#E94E9A", "active": true },
+  { "id": "fun", "name": "Hiburan", "icon": "🎮", "color": "#6C3BB5", "active": true },
+  { "id": "home", "name": "Rumah", "icon": "🧹", "color": "#F59E0B", "active": true },
+  { "id": "personal", "name": "Personal", "icon": "💡", "color": "#10B981", "active": true },
+  { "id": "shopping", "name": "Belanja", "icon": "🛒", "color": "#F472B6", "active": true }
+]

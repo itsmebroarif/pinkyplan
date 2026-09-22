@@ -1,0 +1,569 @@
+/**
+ * Centralized application state + persistence via storage.js.
+ * Seluruh data utama dibaca/ditulis lewat store agar tidak tersebar.
+ */
+import { storage } from "./storage.js";
+import { defaultCategories, hydrationConfig } from "./config.js";
+import { uid, toISODate } from "./helpers.js";
+
+/** @type {Object} State aplikasi tunggal. */
+const appState = {
+    currentUser: null,
+    currentRoute: "/dashboard",
+    categories: [],
+    todos: [],
+    schedules: [],
+    hydration: null,
+    settings: {},
+    quotes: [],
+    statsHistory: {}
+};
+
+const listeners = new Set();
+
+/**
+ * Subscribe ke perubahan state.
+ *
+ * @param {Function} cb - Callback(state).
+ * @returns {Function} Unsubscribe.
+ */
+export function subscribe(cb) {
+    listeners.add(cb);
+    return () => listeners.delete(cb);
+}
+
+/**
+ * Notifikasi seluruh subscriber atas perubahan state.
+ */
+function notify() {
+    listeners.forEach((cb) => {
+        try {
+            cb(appState);
+        } catch (error) {
+            console.error("store subscriber error:", error);
+        }
+    });
+}
+
+/**
+ * Load seluruh data dari LocalStorage ke state.
+ */
+export function loadState() {
+    appState.currentUser = storage.get("activeUser", null);
+    appState.categories = storage.get("categories", defaultCategories);
+    appState.todos = storage.get("todos", []);
+    appState.schedules = storage.get("schedules", []);
+    appState.settings = storage.get("settings", {
+        theme: null,
+        animation: true,
+        notifications: false,
+        hydrationGoal: hydrationConfig.dailyGoal
+    });
+    appState.quotes = storage.get("quotes", []);
+    appState.statsHistory = storage.get("statsHistory", {});
+
+    const today = toISODate();
+    const savedHydration = storage.get("hydration", null);
+    if (!savedHydration || savedHydration.date !== today) {
+        appState.hydration = {
+            date: today,
+            count: 0,
+            goal: appState.settings.hydrationGoal || hydrationConfig.dailyGoal,
+            log: []
+        };
+        persistHydration();
+    } else {
+        appState.hydration = savedHydration;
+    }
+    notify();
+}
+
+/**
+ * Simpan seluruh state kolektif (kecuali currentUser).
+ */
+function persistAll() {
+    storage.set("categories", appState.categories);
+    storage.set("todos", appState.todos);
+    storage.set("schedules", appState.schedules);
+    storage.set("settings", appState.settings);
+    storage.set("quotes", appState.quotes);
+    storage.set("statsHistory", appState.statsHistory);
+}
+
+/** @returns {Object} Salinan state saat ini. */
+export function getState() {
+    return { ...appState };
+}
+
+/**
+ * Set user aktif + persist.
+ *
+ * @param {Object|null} user - User profile.
+ */
+export function setCurrentUser(user) {
+    appState.currentUser = user;
+    if (user) storage.set("activeUser", user);
+    else storage.remove("activeUser");
+    notify();
+}
+
+/**
+ * Set route aktif di state.
+ *
+ * @param {string} route - Path route.
+ */
+export function setCurrentRoute(route) {
+    appState.currentRoute = route;
+    notify();
+}
+
+/* ---------------- Categories ---------------- */
+
+/**
+ * @returns {Array} Daftar kategori aktif.
+ */
+export function getCategories() {
+    return appState.categories.filter((c) => c.active !== false);
+}
+
+/**
+ * Tambah kategori baru.
+ *
+ * @param {{name:string, icon?:string, color?:string}} data - Data kategori.
+ * @returns {Object} Kategori baru.
+ */
+export function addCategory(data) {
+    const cat = {
+        id: data.id || uid("CAT"),
+        name: data.name,
+        icon: data.icon || "🏷️",
+        color: data.color || "#FF69B4",
+        active: true
+    };
+    appState.categories.push(cat);
+    storage.set("categories", appState.categories);
+    notify();
+    return cat;
+}
+
+/**
+ * Update kategori by id.
+ *
+ * @param {string} id - ID kategori.
+ * @param {Object} patch - Field yang diubah.
+ */
+export function updateCategory(id, patch) {
+    const idx = appState.categories.findIndex((c) => c.id === id);
+    if (idx === -1) return;
+    appState.categories[idx] = { ...appState.categories[idx], ...patch };
+    storage.set("categories", appState.categories);
+    notify();
+}
+
+/**
+ * Hapus kategori by id.
+ *
+ * @param {string} id - ID kategori.
+ */
+export function removeCategory(id) {
+    appState.categories = appState.categories.filter((c) => c.id !== id);
+    storage.set("categories", appState.categories);
+    notify();
+}
+
+/**
+ * Cari kategori by id.
+ *
+ * @param {string} id - ID kategori.
+ * @returns {Object|undefined}
+ */
+export function getCategory(id) {
+    return appState.categories.find((c) => c.id === id);
+}
+
+/* ---------------- Todos ---------------- */
+
+/**
+ * @returns {Array} Seluruh todo.
+ */
+export function getTodos() {
+    return appState.todos;
+}
+
+/**
+ * Tambah todo.
+ *
+ * @param {Object} data - Data todo.
+ * @returns {Object} Todo baru.
+ */
+export function addTodo(data) {
+    const todo = {
+        id: uid("TODO"),
+        title: data.title.trim(),
+        description: data.description || "",
+        date: data.date || toISODate(),
+        priority: data.priority || "medium",
+        status: "pending",
+        categoryId: data.categoryId || null,
+        scheduleId: data.scheduleId || null,
+        groupId: data.groupId || null,
+        createdAt: new Date().toISOString()
+    };
+    appState.todos.push(todo);
+    storage.set("todos", appState.todos);
+    recordStat(todo.date);
+    notify();
+    return todo;
+}
+
+/**
+ * Update todo by id.
+ *
+ * @param {string} id - ID todo.
+ * @param {Object} patch - Perubahan field.
+ */
+export function updateTodo(id, patch) {
+    const idx = appState.todos.findIndex((t) => t.id === id);
+    if (idx === -1) return;
+    appState.todos[idx] = { ...appState.todos[idx], ...patch };
+    storage.set("todos", appState.todos);
+    notify();
+}
+
+/**
+ * Toggle status selesai/belum.
+ *
+ * @param {string} id - ID todo.
+ * @returns {Object|undefined} Todo hasil update.
+ */
+export function toggleTodo(id) {
+    const todo = appState.todos.find((t) => t.id === id);
+    if (!todo) return undefined;
+    todo.status = todo.status === "done" ? "pending" : "done";
+    storage.set("todos", appState.todos);
+    recordStat(todo.date);
+    notify();
+    return todo;
+}
+
+/**
+ * Hapus todo by id.
+ *
+ * @param {string} id - ID todo.
+ */
+export function removeTodo(id) {
+    appState.todos = appState.todos.filter((t) => t.id !== id);
+    storage.set("todos", appState.todos);
+    notify();
+}
+
+/**
+ * Filter todo berdasarkan kriteria.
+ *
+ * @param {{date?:string, scheduleId?:string, groupId?:string, status?:string, categoryId?:string}} filters
+ * @returns {Array}
+ */
+export function filterTodos(filters = {}) {
+    return appState.todos.filter((t) => {
+        if (filters.date && t.date !== filters.date) return false;
+        if (filters.scheduleId && t.scheduleId !== filters.scheduleId) return false;
+        if (filters.groupId && t.groupId !== filters.groupId) return false;
+        if (filters.status && t.status !== filters.status) return false;
+        if (filters.categoryId && t.categoryId !== filters.categoryId) return false;
+        return true;
+    });
+}
+
+/* ---------------- Schedules ---------------- */
+
+/**
+ * @returns {Array} Seluruh schedule.
+ */
+export function getSchedules() {
+    return appState.schedules;
+}
+
+/**
+ * Tambah schedule beserta groups default.
+ *
+ * @param {Object} data - Data schedule.
+ * @returns {Object} Schedule baru.
+ */
+export function addSchedule(data) {
+    const schedule = {
+        id: uid("SCH"),
+        date: data.date || toISODate(),
+        startTime: data.startTime || "09:00",
+        endTime: data.endTime || "10:00",
+        title: data.title.trim(),
+        description: data.description || "",
+        categoryId: data.categoryId || null,
+        icon: data.icon || "📅",
+        status: "active",
+        groups: data.groups || [{ id: uid("GRP"), title: "Tasks", todos: [] }],
+        createdAt: new Date().toISOString()
+    };
+    appState.schedules.push(schedule);
+    storage.set("schedules", appState.schedules);
+    notify();
+    return schedule;
+}
+
+/**
+ * Update schedule by id.
+ *
+ * @param {string} id - ID schedule.
+ * @param {Object} patch - Perubahan field.
+ */
+export function updateSchedule(id, patch) {
+    const idx = appState.schedules.findIndex((s) => s.id === id);
+    if (idx === -1) return;
+    appState.schedules[idx] = { ...appState.schedules[idx], ...patch };
+    storage.set("schedules", appState.schedules);
+    notify();
+}
+
+/**
+ * Hapus schedule + todo yang terkait.
+ *
+ * @param {string} id - ID schedule.
+ */
+export function removeSchedule(id) {
+    appState.schedules = appState.schedules.filter((s) => s.id !== id);
+    appState.todos = appState.todos.filter((t) => t.scheduleId !== id);
+    storage.set("schedules", appState.schedules);
+    storage.set("todos", appState.todos);
+    notify();
+}
+
+/**
+ * Schedule berdasarkan tanggal.
+ *
+ * @param {string} date - ISO date.
+ * @returns {Array}
+ */
+export function getSchedulesByDate(date) {
+    return appState.schedules
+        .filter((s) => s.date === date)
+        .sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+/**
+ * Tambah group ke schedule.
+ *
+ * @param {string} scheduleId - ID schedule.
+ * @param {string} title - Judul group.
+ * @returns {Object|undefined} Group baru.
+ */
+export function addGroup(scheduleId, title) {
+    const schedule = appState.schedules.find((s) => s.id === scheduleId);
+    if (!schedule) return undefined;
+    const group = { id: uid("GRP"), title: title.trim(), todos: [] };
+    schedule.groups.push(group);
+    storage.set("schedules", appState.schedules);
+    notify();
+    return group;
+}
+
+/**
+ * Hapus group + todo di dalamnya.
+ *
+ * @param {string} scheduleId - ID schedule.
+ * @param {string} groupId - ID group.
+ */
+export function removeGroup(scheduleId, groupId) {
+    const schedule = appState.schedules.find((s) => s.id === scheduleId);
+    if (!schedule) return;
+    schedule.groups = schedule.groups.filter((g) => g.id !== groupId);
+    appState.todos = appState.todos.filter((t) => t.groupId !== groupId);
+    storage.set("schedules", appState.schedules);
+    storage.set("todos", appState.todos);
+    notify();
+}
+
+/* ---------------- Hydration ---------------- */
+
+/**
+ * @returns {Object} State hydration hari ini.
+ */
+export function getHydration() {
+    return appState.hydration;
+}
+
+/**
+ * Tambah satu gelas air.
+ *
+ * @returns {Object} Hydration terbaru.
+ */
+export function addWater() {
+    ensureHydrationDate();
+    if (appState.hydration.count < appState.hydration.goal) {
+        appState.hydration.count += 1;
+        appState.hydration.log.push(new Date().toISOString());
+        persistHydration();
+        recordStat(appState.hydration.date, { water: true });
+        notify();
+    }
+    return appState.hydration;
+}
+
+/**
+ * Kurangi satu gelas air.
+ *
+ * @returns {Object} Hydration terbaru.
+ */
+export function removeWater() {
+    ensureHydrationDate();
+    if (appState.hydration.count > 0) {
+        appState.hydration.count -= 1;
+        appState.hydration.log.pop();
+        persistHydration();
+        notify();
+    }
+    return appState.hydration;
+}
+
+/**
+ * Reset hydration hari ini.
+ */
+export function resetWater() {
+    ensureHydrationDate();
+    appState.hydration.count = 0;
+    appState.hydration.log = [];
+    persistHydration();
+    notify();
+}
+
+/**
+ * Set goal harian.
+ *
+ * @param {number} goal - Target gelas.
+ */
+export function setHydrationGoal(goal) {
+    appState.settings.hydrationGoal = goal;
+    storage.set("settings", appState.settings);
+    ensureHydrationDate();
+    appState.hydration.goal = goal;
+    persistHydration();
+    notify();
+}
+
+function ensureHydrationDate() {
+    const today = toISODate();
+    if (!appState.hydration || appState.hydration.date !== today) {
+        appState.hydration = {
+            date: today,
+            count: 0,
+            goal: appState.settings.hydrationGoal || hydrationConfig.dailyGoal,
+            log: []
+        };
+    }
+}
+
+function persistHydration() {
+    storage.set("hydration", appState.hydration);
+}
+
+/* ---------------- Settings ---------------- */
+
+/**
+ * Update settings parsial.
+ *
+ * @param {Object} patch - Field settings.
+ */
+export function updateSettings(patch) {
+    appState.settings = { ...appState.settings, ...patch };
+    storage.set("settings", appState.settings);
+    notify();
+}
+
+/* ---------------- Stats history ---------------- */
+
+/**
+ * Catat aktivitas harian untuk chart statistik.
+ *
+ * @param {string} date - ISO date.
+ * @param {{water?:boolean}} [opts] - Opsi tambahan.
+ */
+function recordStat(date, opts = {}) {
+    const entry = appState.statsHistory[date] || { completed: 0, water: 0 };
+    if (opts.water) entry.water += 1;
+    else entry.completed = filterTodos({ date, status: "done" }).length;
+    appState.statsHistory[date] = entry;
+    storage.set("statsHistory", appState.statsHistory);
+}
+
+/**
+ * @returns {Object} History statistik.
+ */
+export function getStatsHistory() {
+    return appState.statsHistory;
+}
+
+/* ---------------- Import / Export ---------------- */
+
+/**
+ * Export seluruh data ke object JSON.
+ *
+ * @returns {Object} Payload export.
+ */
+export function exportData() {
+    return {
+        app: { name: "PinkyPlan", version: "1.0.0" },
+        exportedAt: new Date().toISOString(),
+        user: appState.currentUser || {},
+        settings: appState.settings,
+        categories: appState.categories,
+        schedules: appState.schedules,
+        todos: appState.todos,
+        hydration: appState.hydration,
+        statsHistory: appState.statsHistory
+    };
+}
+
+/**
+ * Validasi + import payload JSON ke state & storage.
+ *
+ * @param {Object} payload - Object hasil JSON.parse.
+ * @throws {Error} Jika struktur tidak valid.
+ * @returns {boolean} true jika import sukses.
+ */
+export function importData(payload) {
+    if (!payload || typeof payload !== "object") {
+        throw new Error("File JSON tidak valid.");
+    }
+    if (!payload.app || payload.app.name !== "PinkyPlan") {
+        throw new Error("Bukan file backup PinkyPlan yang valid.");
+    }
+    if (!Array.isArray(payload.todos) || !Array.isArray(payload.schedules)) {
+        throw new Error("Struktur data tidak lengkap (todos/schedules hilang).");
+    }
+    appState.categories = Array.isArray(payload.categories) ? payload.categories : defaultCategories;
+    appState.todos = payload.todos;
+    appState.schedules = payload.schedules;
+    if (payload.settings) appState.settings = { ...appState.settings, ...payload.settings };
+    if (payload.statsHistory) appState.statsHistory = payload.statsHistory;
+    persistAll();
+    notify();
+    return true;
+}
+
+/**
+ * Reset seluruh data (kecuali user aktif).
+ */
+export function resetAllData() {
+    appState.categories = [...defaultCategories];
+    appState.todos = [];
+    appState.schedules = [];
+    appState.statsHistory = {};
+    appState.settings = { theme: null, animation: true, notifications: false, hydrationGoal: hydrationConfig.dailyGoal };
+    appState.hydration = {
+        date: toISODate(),
+        count: 0,
+        goal: hydrationConfig.dailyGoal,
+        log: []
+    };
+    persistAll();
+    persistHydration();
+    notify();
+}

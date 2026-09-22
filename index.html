@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="pink">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="description" content="PinkyPlan — Cute Retro Personal Productivity Planner">
+    <meta name="theme-color" content="#FF69B4">
+    <title>PinkyPlan 🩷</title>
+
+    <link rel="manifest" href="./manifest.json">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎀</text></svg>">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="./assets/css/variables.css">
+    <link rel="stylesheet" href="./assets/css/base.css">
+    <link rel="stylesheet" href="./assets/css/layout.css">
+    <link rel="stylesheet" href="./assets/css/components.css">
+    <link rel="stylesheet" href="./assets/css/pages.css">
+    <link rel="stylesheet" href="./assets/css/animation.css">
+    <link rel="stylesheet" href="./assets/css/responsive.css">
+</head>
+<body>
+    <div id="app" class="app-shell">
+        <canvas id="bg-canvas" aria-hidden="true"></canvas>
+
+        <div id="auth-root" class="auth-root" hidden></div>
+
+        <aside id="sidebar" class="sidebar" aria-label="Navigasi sidebar" hidden></aside>
+
+        <div class="main-column">
+            <header id="navbar" class="navbar" role="banner" hidden></header>
+            <main id="page-content" class="page-content" role="main" tabindex="-1" hidden></main>
+        </div>
+
+        <nav id="bottom-navigation" class="bottom-nav" aria-label="Navigasi bawah" hidden></nav>
+
+        <button id="fab" class="fab" type="button" aria-label="Tambah cepat" hidden>
+            <span class="fab-icon">+</span>
+        </button>
+
+        <div id="quick-menu" class="quick-menu" hidden></div>
+        <div id="modal-root"></div>
+        <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+        <div id="boot-fallback" class="empty-state" style="position:fixed;inset:0;z-index:200;display:flex;border:none;box-shadow:none;border-radius:0;background:var(--bg,#fff7fc)">
+            <div class="empty-icon">🎀</div>
+            <h3>Memuat PinkyPlan…</h3>
+            <p>Jika lama, pastikan kamu membuka lewat <strong>http://localhost</strong> (bukan file://) lalu reload.</p>
+            <button type="button" class="btn btn-primary" onclick="location.reload()">Reload</button>
+        </div>
+    </div>
+
+    <noscript>
+        <div style="padding:2rem;text-align:center;font-family:sans-serif">
+            <h1>JavaScript harus aktif 🎀</h1>
+            <p>PinkyPlan butuh JavaScript untuk berjalan.</p>
+        </div>
+    </noscript>
+
+    <script type="module" src="./assets/js/app.js"></script>
+</body>
+</html>

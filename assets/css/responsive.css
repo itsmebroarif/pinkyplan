@@ -1,0 +1,106 @@
+/* =========================================================
+   Responsive — Mobile First breakpoints
+   Mobile < 768px · Tablet 768–1023 · Desktop ≥ 1024
+   ========================================================= */
+
+/* ---------- Mobile base sudah di file lain ---------- */
+
+/* Small phones */
+@media (max-width: 380px) {
+    .page-content { padding-inline: 0.7rem; }
+
+    .user-pick { grid-template-columns: 1fr; }
+
+    .form-row { grid-template-columns: 1fr; }
+
+    .glass { width: 40px; height: 48px; font-size: 1.3rem; }
+
+    .more-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .navbar-title { font-size: 0.95rem; }
+
+    .user-chip .u-name { display: none; }
+
+    .stat-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .calendar-day { font-size: 0.78rem; min-height: 34px; }
+
+    .toast { font-size: 0.82rem; padding: 0.55rem 0.7rem; }
+}
+
+/* ---------- Tablet ---------- */
+@media (min-width: 768px) {
+    .page-content {
+        width: min(100% - 2.5rem, var(--max-content));
+        padding-bottom: calc(var(--bottomnav-h) + 2rem);
+    }
+
+    .auth-card { padding: 2.2rem 2rem; }
+
+    .form-row { grid-template-columns: 1fr 1fr; }
+
+    .stat-grid { grid-template-columns: repeat(4, 1fr); }
+
+    .quotes-grid { grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); }
+}
+
+/* ---------- Desktop ---------- */
+@media (min-width: 1024px) {
+    body {
+        /* Sidebar offset sudah ditangani .main-column */
+    }
+
+    .page-content {
+        width: min(100% - 3rem, var(--max-content));
+        padding-bottom: 3rem;
+    }
+
+    .navbar {
+        padding-inline: 1.5rem;
+    }
+
+    .dash-grid {
+        grid-template-columns: 1.5fr 1fr;
+    }
+
+    .chart-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .modal { width: min(100%, 560px); }
+
+    .stat-box .stat-value { font-size: 1.35rem; }
+}
+
+/* ---------- Large desktop — jaga proporsi ---------- */
+@media (min-width: 1440px) {
+    .page-content {
+        width: min(100% - 3rem, 1280px);
+    }
+}
+
+/* ---------- Touch-friendly overrides ---------- */
+@media (pointer: coarse) {
+    .btn { min-height: 48px; }
+    .icon-btn { width: 40px; height: 40px; }
+    .todo-check { width: 30px; height: 30px; }
+    .calendar-day { min-height: 44px; }
+    .filter-chip { min-height: 42px; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+    .sidebar,
+    .bottom-nav,
+    .navbar,
+    .fab,
+    #bg-canvas,
+    .quick-menu { display: none !important; }
+
+    .main-column { margin-left: 0; }
+
+    .card, .schedule-card, .calendar {
+        box-shadow: none;
+        break-inside: avoid;
+    }
+}

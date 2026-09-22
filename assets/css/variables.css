@@ -1,0 +1,112 @@
+/* =========================================================
+   PinkyPlan — Design Tokens & Dual Theme
+   Arif = blue · Arum = pink
+   ========================================================= */
+
+:root,
+[data-theme="pink"] {
+    /* Brand — Pink */
+    --primary: #ff69b4;
+    --primary-dark: #e94e9a;
+    --primary-darker: #c73a7f;
+    --primary-light: #ffe4f1;
+    --primary-soft: #fff0f8;
+
+    /* Secondary — Purple */
+    --secondary: #9b5de5;
+    --secondary-dark: #6c3bb5;
+    --secondary-light: #ede0ff;
+
+    /* Background & surface */
+    --bg: #fff7fc;
+    --bg-pattern: rgba(255, 105, 180, 0.07);
+    --surface: #ffffff;
+    --surface-2: #ffe4f1;
+    --surface-3: #ede0ff;
+
+    /* Text */
+    --text: #2b1b33;
+    --text-muted: #7a6585;
+    --text-on-primary: #ffffff;
+
+    /* Neo-Brutalism */
+    --ink: #1a1220;
+    --border: 3px solid var(--ink);
+    --border-thin: 2px solid var(--ink);
+    --shadow: 6px 6px 0 var(--secondary-dark);
+    --shadow-sm: 4px 4px 0 var(--ink);
+    --shadow-primary: 6px 6px 0 var(--primary-dark);
+    --shadow-xs: 3px 3px 0 var(--ink);
+
+    /* Semantic */
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #4da6ff;
+
+    /* Progress / accent */
+    --accent: var(--primary);
+    --ring: rgba(255, 105, 180, 0.45);
+
+    /* Layout */
+    --sidebar-w: 250px;
+    --navbar-h: 68px;
+    --bottomnav-h: 72px;
+    --radius: 14px;
+    --radius-sm: 10px;
+    --max-content: 1200px;
+
+    /* Fonts */
+    --font-body: "Nunito", system-ui, -apple-system, sans-serif;
+    --font-pixel: "Press Start 2P", monospace;
+}
+
+[data-theme="blue"] {
+    /* Brand — Blue */
+    --primary: #4da6ff;
+    --primary-dark: #2b7de0;
+    --primary-darker: #1d5fb8;
+    --primary-light: #e3f2ff;
+    --primary-soft: #f2f9ff;
+
+    /* Secondary — Indigo/Purple */
+    --secondary: #7c6ce5;
+    --secondary-dark: #4f46b8;
+    --secondary-light: #e4e1ff;
+
+    /* Background & surface */
+    --bg: #f4faff;
+    --bg-pattern: rgba(77, 166, 255, 0.08);
+    --surface: #ffffff;
+    --surface-2: #e3f2ff;
+    --surface-3: #e4e1ff;
+
+    /* Text */
+    --text: #14213d;
+    --text-muted: #5b6b85;
+    --text-on-primary: #ffffff;
+
+    --ink: #101828;
+    --border: 3px solid var(--ink);
+    --border-thin: 2px solid var(--ink);
+    --shadow: 6px 6px 0 var(--secondary-dark);
+    --shadow-sm: 4px 4px 0 var(--ink);
+    --shadow-primary: 6px 6px 0 var(--primary-dark);
+    --shadow-xs: 3px 3px 0 var(--ink);
+
+    --success: #10b981;
+    --warning: #f59e0b;
+    --danger: #ef4444;
+    --info: #4da6ff;
+
+    --accent: var(--primary);
+    --ring: rgba(77, 166, 255, 0.45);
+}
+
+/* Category marker colors (static, independent dari theme) */
+:root {
+    --cat-pink: #ff69b4;
+    --cat-purple: #9b5de5;
+    --cat-blue: #4da6ff;
+    --cat-dark-pink: #e94e9a;
+}

@@ -1,0 +1,110 @@
+/**
+ * Konfigurasi pusat aplikasi PinkyPlan (Configuration Driven).
+ * Menu, route, user, fitur, dan link support dikelola dari sini
+ * tanpa perlu mengubah HTML.
+ */
+
+export const appConfig = {
+    appName: "PinkyPlan",
+    tagline: "Organize your day, one cute task at a time.",
+    version: "1.0.0",
+    storagePrefix: "pinkyplan",
+    features: {
+        threeJs: true,
+        d3: true,
+        hydration: true,
+        notifications: true,
+        pwa: false
+    }
+};
+
+/**
+ * Daftar user profile + tema warna masing-masing.
+ * Arif = biru, Arum = pink.
+ */
+export const userConfig = {
+    arif: {
+        id: "arif",
+        name: "Arif",
+        icon: "👨",
+        pin: "181203",
+        theme: "blue",
+        greetingName: "Arif"
+    },
+    arum: {
+        id: "arum",
+        name: "Arum",
+        icon: "👩",
+        pin: null,
+        theme: "pink",
+        greetingName: "Arum"
+    }
+};
+
+/**
+ * Navigasi dinamis — tambah item di sini untuk menambah menu + route.
+ * mobile:false menyembunyikan item dari bottom navigation.
+ */
+export const navigationConfig = [
+    { id: "dashboard", label: "Dashboard", icon: "🏠", route: "/dashboard", mobile: true, desktop: true },
+    { id: "todo", label: "Todo", icon: "📋", route: "/todo", mobile: true, desktop: true },
+    { id: "schedule", label: "Schedule", icon: "📅", route: "/schedule", mobile: false, desktop: true },
+    { id: "calendar", label: "Calendar", icon: "🗓️", route: "/calendar", mobile: true, desktop: true },
+    { id: "activity", label: "Activity", icon: "🎯", route: "/activity", mobile: false, desktop: true },
+    { id: "hydration", label: "Hydration", icon: "💧", route: "/hydration", mobile: false, desktop: true },
+    { id: "statistics", label: "Statistics", icon: "📊", route: "/statistics", mobile: false, desktop: true },
+    { id: "quotes", label: "Quotes", icon: "💬", route: "/quotes", mobile: false, desktop: true },
+    { id: "settings", label: "Settings", icon: "⚙️", route: "/settings", mobile: true, desktop: true }
+];
+
+/**
+ * Item bottom navigation mobile (maksimal 5 termasuk "More").
+ */
+export const mobileNavConfig = [
+    { id: "dashboard", label: "Home", icon: "🏠", route: "/dashboard" },
+    { id: "todo", label: "Todo", icon: "📋", route: "/todo" },
+    { id: "add", label: "Add", icon: "➕", action: "quick-add" },
+    { id: "calendar", label: "Calendar", icon: "🗓️", route: "/calendar" },
+    { id: "more", label: "More", icon: "✨", action: "more-menu" }
+];
+
+/**
+ * Category default — bisa ditimpa dari data/categories.json atau LocalStorage.
+ */
+export const defaultCategories = [
+    { id: "exercise", name: "Olahraga", icon: "🏃", color: "#FF69B4", active: true },
+    { id: "vacation", name: "Liburan", icon: "🏖️", color: "#9B5DE5", active: true },
+    { id: "study", name: "Belajar", icon: "📚", color: "#4DA6FF", active: true },
+    { id: "work", name: "Kerja", icon: "💼", color: "#E94E9A", active: true },
+    { id: "fun", name: "Hiburan", icon: "🎮", color: "#6C3BB5", active: true },
+    { id: "home", name: "Rumah", icon: "🧹", color: "#F59E0B", active: true },
+    { id: "personal", name: "Personal", icon: "💡", color: "#10B981", active: true },
+    { id: "shopping", name: "Belanja", icon: "🛒", color: "#F472B6", active: true }
+];
+
+/**
+ * Konfigurasi hydration default.
+ */
+export const hydrationConfig = {
+    dailyGoal: 8,
+    glassSize: 250,
+    unit: "ml",
+    reminders: ["08:00", "10:00", "12:00", "14:00", "16:00", "18:00", "20:00", "22:00"]
+};
+
+/**
+ * Link support / donasi.
+ */
+export const supportConfig = {
+    trakteerUrl: "https://trakteer.id/itsmebroarif/tip?open=true",
+    trakteerLabel: "Trakteer — Tip untuk Arif ☕"
+};
+
+/**
+ * Prioritas todo.
+ */
+export const priorityConfig = [
+    { id: "low", label: "Low", color: "#10B981" },
+    { id: "medium", label: "Medium", color: "#F59E0B" },
+    { id: "high", label: "High", color: "#E94E9A" }
+];

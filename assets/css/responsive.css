@@ -28,6 +28,93 @@
     .calendar-day .day-badge { min-width: 14px; height: 14px; font-size: 0.5rem; padding: 0 2px; }
 
     .toast { font-size: 0.82rem; padding: 0.55rem 0.7rem; }
+
+    /* Small phone Habit tweaks */
+    .hmc-day-cell .habit-check-btn { width: 28px; height: 28px; font-size: 0.68rem; }
+    .hmc-today-banner { flex-direction: column; align-items: stretch; gap: 0.4rem; }
+    .hmc-today-btn { width: 100%; }
+}
+
+/* Mobile adjustments for Habits page & Components (< 768px) */
+@media (max-width: 767px) {
+    .habit-page-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .habit-page-header .btn {
+        width: 100%;
+    }
+
+    .habit-matrix-card {
+        padding: 0.85rem !important;
+    }
+
+    .habit-week-header-row {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.6rem;
+    }
+
+    .habit-week-title {
+        font-size: 0.95rem;
+        text-align: center;
+    }
+
+    .habit-view-switch {
+        width: 100%;
+        display: flex;
+    }
+
+    .habit-view-switch .view-pill {
+        flex: 1;
+        justify-content: center;
+        padding: 0.45rem 0.5rem;
+    }
+
+    .habit-controls-row {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .habit-week-nav {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .habit-week-nav #habit-current-week {
+        flex: 1;
+        text-align: center;
+    }
+
+    .heat-section-header {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 0.25rem !important;
+    }
+
+    .heat-item-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.35rem;
+    }
+
+    .heat-badges {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .hmc-week-strip {
+        padding: 0.45rem 0.25rem;
+        gap: 3px;
+    }
+
+    .hmc-day-cell .habit-check-btn {
+        width: 31px;
+        height: 31px;
+        font-size: 0.75rem;
+    }
 }
 
 /* ---------- Tablet ---------- */
@@ -90,16 +177,155 @@
     .filter-chip { min-height: 42px; }
 }
 
-/* Mobile & Tablet adjustments for Pomodoro Widget & Habits */
-@media (max-width: 1023px) {
-    .pomodoro-card,
-    .pomodoro-floating-pill {
+/* Mobile & Tablet adjustments for Pomodoro Widget */
+@media (min-width: 768px) and (max-width: 1023.98px) {
+    .pomodoro-card {
         bottom: calc(var(--bottomnav-h, 60px) + 14px);
-        right: 12px;
+        right: 16px;
+        width: 350px;
+        max-height: calc(100vh - var(--bottomnav-h, 60px) - 28px);
+        overflow-y: auto;
     }
 
+    .pomodoro-floating-pill {
+        bottom: calc(var(--bottomnav-h, 60px) + 14px);
+        left: 16px;
+        right: auto;
+    }
+}
+
+@media (max-width: 767.98px) {
+    /* Pomodoro Backdrop for Mobile */
+    .pomodoro-backdrop {
+        display: block;
+        position: fixed;
+        inset: 0;
+        z-index: 9990;
+        background: rgba(15, 5, 25, 0.48);
+        backdrop-filter: blur(3px);
+        -webkit-backdrop-filter: blur(3px);
+        animation: fade-in 0.2s ease;
+    }
+
+    /* Pomodoro Bottom Sheet */
     .pomodoro-card {
-        width: min(340px, calc(100vw - 24px));
+        bottom: var(--bottomnav-h, 60px);
+        left: 0;
+        right: 0;
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+        border: 2.5px solid var(--ink, #1a1a1a);
+        border-bottom: none;
+        box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.25);
+        z-index: 9995;
+        max-height: calc(88dvh - var(--bottomnav-h, 60px));
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        padding: 0.65rem 1rem 1.25rem;
+        animation: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .pomo-sheet-handle {
+        display: block;
+        width: 44px;
+        height: 4.5px;
+        border-radius: 999px;
+        background: var(--border-color, #ffd1dc);
+        margin: 0 auto 0.65rem;
+    }
+
+    .pomo-header {
+        margin-bottom: 0.65rem;
+        padding-bottom: 0.45rem;
+    }
+
+    .pomo-title {
+        font-size: 0.92rem;
+        gap: 0.35rem;
+    }
+
+    .pomo-session-badge {
+        font-size: 0.68rem !important;
+        padding: 0.12rem 0.38rem !important;
+    }
+
+    .pomo-window-actions .icon-btn {
+        width: 34px;
+        height: 34px;
+        font-size: 0.85rem;
+    }
+
+    .pomo-clock {
+        font-size: 2.5rem;
+    }
+
+    .pomo-modes {
+        gap: 3px;
+        padding: 2.5px;
+        margin-bottom: 0.65rem;
+    }
+
+    .pomo-mode-btn {
+        padding: 0.45rem 0.15rem;
+        font-size: 0.72rem;
+    }
+
+    .pomo-controls {
+        gap: 0.5rem;
+        margin-bottom: 0.65rem;
+    }
+
+    .pomo-side-btn {
+        flex: 1;
+        min-height: 42px;
+        font-size: 0.82rem;
+    }
+
+    .pomo-main-btn {
+        flex: 1.5;
+        min-height: 46px;
+        font-size: 1rem;
+    }
+
+    .pomo-adjust-row {
+        padding: 0.35rem 0.5rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .adjust-chip {
+        min-width: 38px;
+        min-height: 32px;
+        font-size: 0.74rem;
+        padding: 0.2rem 0.4rem;
+    }
+
+    .pomo-adjust-label {
+        font-size: 0.72rem;
+    }
+
+    .pomo-task-select {
+        font-size: 0.8rem;
+    }
+
+    /* Floating Pill di kiri bawah agar tidak menabrak tombol FAB di kanan */
+    .pomodoro-floating-pill {
+        bottom: calc(var(--bottomnav-h, 60px) + 12px);
+        left: 12px;
+        right: auto;
+        max-width: calc(100vw - 88px);
+        padding: 0.4rem 0.7rem;
+        gap: 0.35rem;
+        box-shadow: 3px 3px 0 var(--ink, #1a1a1a);
+    }
+
+    .pomodoro-floating-pill .p-time {
+        font-size: 0.88rem;
+    }
+
+    .pomodoro-floating-pill .p-task-title {
+        max-width: 80px;
+        font-size: 0.72rem;
     }
 }
 

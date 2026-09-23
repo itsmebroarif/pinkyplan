@@ -15,7 +15,7 @@ import { getDailyQuote, loadQuotes, quoteCardHtml } from "./quote.js";
 import { openTodoModal, paintTodoList } from "./todo.js";
 import { openScheduleModal } from "./schedule.js";
 import { openHabitModal } from "./habits.js";
-import { togglePomodoro } from "../components/pomodoro.js";
+import { togglePomodoro, getPomodoroCurrentState } from "../components/pomodoro.js";
 import { openModal, closeModal } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { navigate } from "../router.js";
@@ -276,16 +276,16 @@ export async function renderDashboard(container) {
                     </div>
                 </div>
 
-                <div class="card hoverable" id="dash-pomodoro-card">
-                    <div class="card-header">
+                <div class="card hoverable pomo-dash-card" id="dash-pomodoro-card">
+                    <div class="card-header" style="flex-wrap:wrap;gap:0.4rem;align-items:center">
                         <div class="card-title">🍅 Pomodoro Focus</div>
-                        <span class="badge pink">${pomoStats.completedToday} sesi hari ini</span>
+                        <span class="badge ${pomoStats.completedToday > 0 ? "pink" : "purple"}">${pomoStats.completedToday} sesi hari ini</span>
                     </div>
-                    <p class="text-muted" style="font-size:0.85rem;font-weight:700;margin-bottom:0.75rem">
-                        Tingkatkan fokus saat menyelesaikan tugas dengan timer 25 menit fokus & istirahat teratur.
+                    <p class="text-muted" style="font-size:0.84rem;font-weight:700;margin-bottom:0.75rem;line-height:1.4">
+                        Fokus 25 menit diselingi istirahat teratur untuk menyelesaikan tugas harian tanpa distraksi.
                     </p>
                     <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                        <button type="button" class="btn btn-primary btn-sm btn-block" id="dash-start-pomo">
+                        <button type="button" class="btn btn-primary btn-sm btn-block" id="dash-start-pomo" style="min-height:38px">
                             🍅 Buka Pomodoro Timer
                         </button>
                     </div>

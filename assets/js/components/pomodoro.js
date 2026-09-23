@@ -22,6 +22,18 @@ let pomodoroState = {
     linkedTask: null // { id, title, type: 'todo'|'schedule', extra: '' }
 };
 
+/**
+ * Kembalikan state aktif Pomodoro untuk komponen lain (Dashboard, Navbar).
+ *
+ * @returns {Object}
+ */
+export function getPomodoroCurrentState() {
+    return {
+        ...pomodoroState,
+        modeInfo: MODES[pomodoroState.mode] || MODES.pomodoro
+    };
+}
+
 let timerInterval = null;
 let audioCtx = null;
 
@@ -352,22 +364,26 @@ function renderWidget() {
     const todaySchedules = getSchedules().filter((s) => s.date === toISODate() || (s.endDate && s.date <= toISODate() && toISODate() <= s.endDate));
 
     root.innerHTML = `
+        <div class="pomodoro-backdrop" id="pomo-backdrop"></div>
         <div class="pomodoro-card shadow-lg" id="pomodoro-card">
+            <!-- Mobile Grab Handle -->
+            <div class="pomo-sheet-handle"></div>
+
             <!-- Header -->
             <div class="pomo-header">
                 <div class="pomo-title">
                     <span class="pomo-icon">🍅</span>
-                    <span>Pomodoro Focus</span>
-                    <span class="badge pink" style="font-size:0.68rem;padding:0.15rem 0.4rem">
-                        ${stats.completedToday} selesai hari ini
+                    <span class="pomo-heading">Pomodoro Focus</span>
+                    <span class="badge pink pomo-session-badge">
+                        ${stats.completedToday} selesai
                     </span>
                 </div>
                 <div class="pomo-window-actions">
-                    <button type="button" class="icon-btn" id="pomo-sound-toggle" title="${pomodoroState.soundEnabled ? "Suara Aktif" : "Mute"}">
+                    <button type="button" class="icon-btn" id="pomo-sound-toggle" title="${pomodoroState.soundEnabled ? "Suara Aktif" : "Mute"}" aria-label="Toggle Suara">
                         ${pomodoroState.soundEnabled ? "🔊" : "🔇"}
                     </button>
-                    <button type="button" class="icon-btn" id="pomo-min-btn" title="Kecilkan">_</button>
-                    <button type="button" class="icon-btn" id="pomo-close-btn" title="Tutup">✕</button>
+                    <button type="button" class="icon-btn" id="pomo-min-btn" title="Kecilkan (Minimize)" aria-label="Kecilkan">_</button>
+                    <button type="button" class="icon-btn" id="pomo-close-btn" title="Tutup" aria-label="Tutup">✕</button>
                 </div>
             </div>
 
@@ -397,24 +413,28 @@ function renderWidget() {
 
             <!-- Controls row -->
             <div class="pomo-controls">
-                <button type="button" class="btn btn-secondary btn-sm" id="pomo-reset-btn" title="Reset waktu">
+                <button type="button" class="btn btn-secondary btn-sm pomo-side-btn" id="pomo-reset-btn" title="Reset waktu">
                     ↺ Reset
                 </button>
                 <button type="button" class="btn btn-primary btn-lg pomo-main-btn" id="pomo-toggle-btn">
                     ${pomodoroState.isRunning ? "⏸ Pause" : "▶ Start"}
                 </button>
-                <button type="button" class="btn btn-secondary btn-sm" id="pomo-skip-btn" title="Lanjut mode berikutnya">
+                <button type="button" class="btn btn-secondary btn-sm pomo-side-btn" id="pomo-skip-btn" title="Lanjut mode berikutnya">
                     ⏭ Skip
                 </button>
             </div>
 
             <!-- Duration adjusters -->
             <div class="pomo-adjust-row">
-                <button type="button" class="adjust-chip" data-adjust="-300">-5m</button>
-                <button type="button" class="adjust-chip" data-adjust="-60">-1m</button>
-                <span style="font-size:0.75rem;font-weight:700;color:var(--text-muted)">Sesuaikan Waktu</span>
-                <button type="button" class="adjust-chip" data-adjust="60">+1m</button>
-                <button type="button" class="adjust-chip" data-adjust="300">+5m</button>
+                <div class="pomo-adjust-group">
+                    <button type="button" class="adjust-chip" data-adjust="-300" title="Kurangi 5 menit" aria-label="Kurangi 5 menit">-5m</button>
+                    <button type="button" class="adjust-chip" data-adjust="-60" title="Kurangi 1 menit" aria-label="Kurangi 1 menit">-1m</button>
+                </div>
+                <span class="pomo-adjust-label">Atur Waktu</span>
+                <div class="pomo-adjust-group">
+                    <button type="button" class="adjust-chip" data-adjust="60" title="Tambah 1 menit" aria-label="Tambah 1 menit">+1m</button>
+                    <button type="button" class="adjust-chip" data-adjust="300" title="Tambah 5 menit" aria-label="Tambah 5 menit">+5m</button>
+                </div>
             </div>
 
             <!-- Task Linker Section -->
@@ -430,9 +450,9 @@ function renderWidget() {
                     <div class="pomo-active-task-box">
                         <div class="pomo-task-info">
                             <span class="pomo-task-badge ${pomodoroState.linkedTask.type}">
-                                ${pomodoroState.linkedTask.type === "todo" ? "📋 Todo" : "📅 Schedule"}
+                                ${pomodoroState.linkedTask.type === "todo" ? "📋 Todo" : "📅 Jadwal"}
                             </span>
-                            <span class="pomo-task-name">${escapeHtml(pomodoroState.linkedTask.title)}</span>
+                            <span class="pomo-task-name" title="${escapeHtml(pomodoroState.linkedTask.title)}">${escapeHtml(pomodoroState.linkedTask.title)}</span>
                         </div>
                         ${
                             pomodoroState.linkedTask.type === "todo"
@@ -442,7 +462,7 @@ function renderWidget() {
                     </div>
                 `
                         : `
-                    <select class="select select-sm" id="pomo-task-picker">
+                    <select class="select select-sm pomo-task-select" id="pomo-task-picker">
                         <option value="">— Pilih tugas untuk dikaitkan —</option>
                         <optgroup label="📋 Tugas Todo Aktif">
                             ${todos.map((t) => `<option value="todo:${t.id}">${escapeHtml(t.title)} (${formatDateShort(t.date || toISODate())})</option>`).join("")}
@@ -458,6 +478,11 @@ function renderWidget() {
     `;
 
     // Event Bindings
+    root.querySelector("#pomo-backdrop")?.addEventListener("click", () => {
+        pomodoroState.isMinimized = true;
+        renderWidget();
+    });
+
     root.querySelector("#pomo-close-btn")?.addEventListener("click", () => togglePomodoro(false));
     root.querySelector("#pomo-min-btn")?.addEventListener("click", () => {
         pomodoroState.isMinimized = true;

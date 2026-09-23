@@ -16,6 +16,9 @@ import { toast } from "../components/ui.js";
 /** Offset minggu aktif (0 = minggu ini, -1 = minggu lalu, dsb) */
 let weekOffset = 0;
 
+/** Mode tampilan: 'cards' (optimal untuk mobile) atau 'table' */
+let habitViewMode = localStorage.getItem("pinkyplan_habit_view") || (window.innerWidth < 768 ? "cards" : "table");
+
 /**
  * Hitung 7 hari dari minggu yang sedang dilihat berdasarkan offset.
  *
@@ -58,27 +61,35 @@ function getWeekDays(offset = 0) {
 export function renderHabitsPage(container) {
     container.innerHTML = `
         <div class="page-enter">
-            <div class="page-header">
+            <div class="page-header habit-page-header">
                 <div>
                     <h1>🌱 Daily Habit Tracker</h1>
-                    <p class="page-desc">Tandai tugas kebiasaan harian, bangun konsistensi, dan raih streak terbaikmu</p>
+                    <p class="page-desc">Bangun konsistensi harian, catat rutinitas, dan raih streak terbaikmu</p>
                 </div>
                 <button type="button" class="btn btn-primary" id="add-habit-btn">＋ Add Habit</button>
             </div>
 
-            <!-- Stats Overview Cards -->
-            <div class="habit-stats-grid" id="habit-stats-overview"></div>
+            <!-- Stats Overview Cards (2x2 di Mobile, 4-col di Desktop) -->
+            <div class="stat-grid habit-stats-grid" id="habit-stats-overview"></div>
 
-            <!-- Week Navigator & Consistency Matrix -->
+            <!-- Week Navigator & Consistency Tracker -->
             <div class="card soft habit-matrix-card" style="margin-bottom:1.5rem;padding:1.1rem">
                 <div class="habit-matrix-header">
-                    <div class="habit-week-title" id="habit-week-label">
-                        🗓️ Memuat minggu…
+                    <div class="habit-week-header-row">
+                        <div class="habit-week-title" id="habit-week-label">
+                            🗓️ Memuat minggu…
+                        </div>
+                        <div class="habit-view-switch" id="habit-view-switcher">
+                            <button type="button" class="view-pill ${habitViewMode === "cards" ? "active" : ""}" data-view="cards" title="Tampilan Kartu (Optimal Mobile)">🗂️ Kartu</button>
+                            <button type="button" class="view-pill ${habitViewMode === "table" ? "active" : ""}" data-view="table" title="Tampilan Tabel Mingguan">📊 Tabel</button>
+                        </div>
                     </div>
-                    <div class="habit-week-nav">
-                        <button type="button" class="btn btn-sm btn-secondary" id="habit-prev-week" title="Minggu Sebelumnya">◀</button>
-                        <button type="button" class="btn btn-sm btn-ghost" id="habit-current-week">Hari Ini</button>
-                        <button type="button" class="btn btn-sm btn-secondary" id="habit-next-week" title="Minggu Berikutnya">▶</button>
+                    <div class="habit-controls-row">
+                        <div class="habit-week-nav">
+                            <button type="button" class="btn btn-sm btn-secondary" id="habit-prev-week" title="Minggu Sebelumnya" aria-label="Minggu Sebelumnya">◀</button>
+                            <button type="button" class="btn btn-sm btn-ghost" id="habit-current-week">Hari Ini</button>
+                            <button type="button" class="btn btn-sm btn-secondary" id="habit-next-week" title="Minggu Berikutnya" aria-label="Minggu Berikutnya">▶</button>
+                        </div>
                     </div>
                 </div>
 
@@ -87,9 +98,9 @@ export function renderHabitsPage(container) {
 
             <!-- 30-Day Consistency Heatmaps -->
             <div class="card soft" style="margin-bottom:1.5rem;padding:1.1rem">
-                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.9rem">
+                <div class="heat-section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.9rem">
                     <div style="font-weight:900;font-size:1.05rem;color:var(--text-color)">
-                        📈 Visualisasi Konsistensi (30 Hari Terakhir)
+                        📈 Peta Konsistensi (30 Hari Terakhir)
                     </div>
                     <span class="text-muted" style="font-size:0.78rem;font-weight:700">
                         Kotak berwarna = kebiasaan selesai
@@ -117,11 +128,20 @@ export function renderHabitsPage(container) {
         paintHabitsView(container);
     });
 
+    container.querySelectorAll("#habit-view-switcher .view-pill").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            habitViewMode = btn.dataset.view;
+            localStorage.setItem("pinkyplan_habit_view", habitViewMode);
+            container.querySelectorAll("#habit-view-switcher .view-pill").forEach((b) => b.classList.toggle("active", b.dataset.view === habitViewMode));
+            paintHabitsView(container);
+        });
+    });
+
     paintHabitsView(container);
 }
 
 /**
- * Paint seluruh konten data habits: statistik, tabel mingguan, dan heatmap 30 hari.
+ * Paint seluruh konten data habits: statistik, tracker mingguan, dan heatmap 30 hari.
  *
  * @param {HTMLElement} container
  */
@@ -146,25 +166,25 @@ export function paintHabitsView(container) {
         const todayPct = habits.length ? Math.round((todayDone / habits.length) * 100) : 0;
 
         statsContainer.innerHTML = `
-            <div class="stat-card">
+            <div class="stat-box">
                 <div class="stat-icon">🌱</div>
-                <div class="stat-val">${habits.length}</div>
-                <div class="stat-label">Total Habit Aktif</div>
+                <div class="stat-value">${habits.length}</div>
+                <div class="stat-label">Total Habit</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-box">
                 <div class="stat-icon">🔥</div>
-                <div class="stat-val">${bestStreakAll} Hari</div>
-                <div class="stat-label">Best Streak Tertinggi</div>
+                <div class="stat-value">${bestStreakAll} Hari</div>
+                <div class="stat-label">Best Streak</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-box">
                 <div class="stat-icon">✨</div>
-                <div class="stat-val">${todayDone}/${habits.length} (${todayPct}%)</div>
-                <div class="stat-label">Selesai Hari Ini</div>
+                <div class="stat-value">${todayDone}/${habits.length}</div>
+                <div class="stat-label">Hari Ini (${todayPct}%)</div>
             </div>
-            <div class="stat-card">
+            <div class="stat-box">
                 <div class="stat-icon">🏆</div>
-                <div class="stat-val">${totalCompletionsAll}</div>
-                <div class="stat-label">Total Ceklis Konsisten</div>
+                <div class="stat-value">${totalCompletionsAll}</div>
+                <div class="stat-label">Total Ceklis</div>
             </div>
         `;
     }
@@ -174,16 +194,16 @@ export function paintHabitsView(container) {
     if (weekLabel) {
         const firstDay = weekDays[0];
         const lastDay = weekDays[6];
-        const statusText = weekOffset === 0 ? " · (Minggu Ini)" : weekOffset === -1 ? " · (Minggu Lalu)" : "";
-        weekLabel.innerHTML = `<span>🗓️ ${formatDateShort(firstDay.dateStr)} — ${formatDateShort(lastDay.dateStr)}${statusText}</span>`;
+        const statusText = weekOffset === 0 ? " (Minggu Ini)" : weekOffset === -1 ? " (Minggu Lalu)" : "";
+        weekLabel.innerHTML = `<span>🗓️ ${formatDateShort(firstDay.dateStr)} — ${formatDateShort(lastDay.dateStr)} ${statusText}</span>`;
     }
 
-    // 3. Render Weekly Interactive Consistency Table
+    // 3. Render Tracker (Cards View vs Table View)
     const tableContainer = container.querySelector("#habit-table-container");
     if (tableContainer) {
         if (!habits.length) {
             tableContainer.innerHTML = `
-                <div class="empty-state" style="padding:1.8rem 1rem">
+                <div class="empty-state" style="padding:2rem 1rem">
                     <div class="empty-icon">🌱</div>
                     <h3>Belum ada Habit harian</h3>
                     <p>Mulai bangun kebiasaan baik dengan menambahkan Habit pertamamu!</p>
@@ -191,7 +211,81 @@ export function paintHabitsView(container) {
                 </div>
             `;
             tableContainer.querySelector("#empty-add-habit")?.addEventListener("click", () => openHabitModal());
+        } else if (habitViewMode === "cards") {
+            // ==================== TAMPILAN KARTU (MOBILE-FIRST) ====================
+            let cardsHtml = `<div class="habit-mobile-cards">`;
+
+            habits.forEach((h) => {
+                const compSet = new Set(h.completedDates || []);
+                const isTodayDone = compSet.has(todayStr);
+
+                cardsHtml += `
+                    <div class="habit-mobile-card" data-habit-id="${h.id}" style="border-left-color: ${h.color};">
+                        <div class="hmc-top">
+                            <div class="hmc-identity">
+                                <span class="habit-icon" style="background:${h.color}22">${h.icon}</span>
+                                <div class="hmc-info">
+                                    <div class="habit-name">${escapeHtml(h.name)}</div>
+                                    <div class="hmc-streak-meta">
+                                        <span class="hmc-streak-badge ${h.currentStreak > 0 ? "active" : ""}">
+                                            🔥 ${h.currentStreak} hari
+                                        </span>
+                                        <span class="hmc-best-badge">Best: ${h.bestStreak} hr</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="hmc-actions">
+                                <button type="button" class="icon-btn" data-edit-habit="${h.id}" title="Edit Habit" aria-label="Edit">✏️</button>
+                                <button type="button" class="icon-btn danger" data-del-habit="${h.id}" title="Hapus Habit" aria-label="Hapus">🗑️</button>
+                            </div>
+                        </div>
+
+                        ${h.description ? `<p class="hmc-desc">${escapeHtml(h.description)}</p>` : ""}
+
+                        <!-- Tombol Ceklis Cepat Hari Ini -->
+                        <div class="hmc-today-banner ${isTodayDone ? "done" : ""}">
+                            <div class="hmc-today-info">
+                                <span class="hmc-today-title">Hari Ini (${formatDateShort(todayStr)}):</span>
+                                <span class="hmc-today-status ${isTodayDone ? "done" : ""}">${isTodayDone ? "✓ Selesai Tercapai" : "Belum ditandai"}</span>
+                            </div>
+                            <button type="button" class="btn btn-sm ${isTodayDone ? "btn-secondary" : "btn-primary"} hmc-today-btn habit-check-btn ${isTodayDone ? "checked" : ""}"
+                                data-habit-id="${h.id}"
+                                data-date="${todayStr}"
+                                style="${isTodayDone ? `background:${h.color};border-color:${h.color};color:#fff;` : ""}"
+                                aria-label="Tandai ${h.name} untuk hari ini">
+                                ${isTodayDone ? "✓ Selesai" : "＋ Tandai Hari Ini"}
+                            </button>
+                        </div>
+
+                        <!-- Baris 7 Hari Kalender Mingguan (Rapi 100% Pas Lebar Layar Mobile) -->
+                        <div class="hmc-week-strip">
+                            ${weekDays
+                                .map((d) => {
+                                    const isDone = compSet.has(d.dateStr);
+                                    return `
+                                    <div class="hmc-day-cell ${d.isToday ? "today-cell" : ""}">
+                                        <div class="hmc-day-name">${d.dayName}</div>
+                                        <button type="button" class="habit-check-btn ${isDone ? "checked" : ""}"
+                                            data-habit-id="${h.id}"
+                                            data-date="${d.dateStr}"
+                                            style="${isDone ? `background:${h.color};border-color:${h.color};` : ""}"
+                                            aria-label="${h.name}, ${d.dayName} ${d.dayNum} ${isDone ? "Selesai" : "Belum"}"
+                                            title="${d.dayName}, ${formatDateShort(d.dateStr)} (${isDone ? "Selesai ✓" : "Klik untuk menandai"})">
+                                            ${isDone ? "✓" : d.dayNum}
+                                        </button>
+                                    </div>
+                                `;
+                                })
+                                .join("")}
+                        </div>
+                    </div>
+                `;
+            });
+
+            cardsHtml += `</div>`;
+            tableContainer.innerHTML = cardsHtml;
         } else {
+            // ==================== TAMPILAN TABEL ====================
             let html = `
                 <div class="habit-table-wrapper">
                     <table class="habit-table">
@@ -273,58 +367,58 @@ export function paintHabitsView(container) {
             `;
 
             tableContainer.innerHTML = html;
-
-            // Bind toggle habit button clicks
-            tableContainer.querySelectorAll(".habit-check-btn").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const habitId = btn.dataset.habitId;
-                    const dateStr = btn.dataset.date;
-                    const { completed, streak } = toggleHabitDate(habitId, dateStr);
-
-                    if (completed) {
-                        btn.classList.add("checked");
-                        btn.textContent = "✓";
-                        const h = habits.find((x) => x.id === habitId);
-                        if (h) {
-                            btn.style.background = h.color;
-                            btn.style.borderColor = h.color;
-                        }
-                        toast(`🔥 Habit ditandai selesai! Streak: ${streak.currentStreak} hari`, "success", 1600);
-                    } else {
-                        btn.classList.remove("checked");
-                        btn.textContent = "";
-                        btn.style.background = "";
-                        btn.style.borderColor = "";
-                        toast("Dibatalkan", "info", 1000);
-                    }
-
-                    // Refresh tampilan setelah jeda singkat
-                    setTimeout(() => paintHabitsView(container), 250);
-                });
-            });
-
-            // Bind edit & delete buttons
-            tableContainer.querySelectorAll("[data-edit-habit]").forEach((btn) => {
-                btn.addEventListener("click", () => {
-                    const h = habits.find((x) => x.id === btn.dataset.editHabit);
-                    if (h) openHabitModal(h);
-                });
-            });
-
-            tableContainer.querySelectorAll("[data-del-habit]").forEach((btn) => {
-                btn.addEventListener("click", async () => {
-                    const ok = await confirmDialog("Hapus kebiasaan ini beserta riwayat streak-nya?", {
-                        danger: true,
-                        confirmLabel: "Hapus Habit"
-                    });
-                    if (ok) {
-                        removeHabit(btn.dataset.delHabit);
-                        toast("Habit dihapus 🗑️", "info");
-                        paintHabitsView(container);
-                    }
-                });
-            });
         }
+
+        // Bind toggle habit button clicks (berlaku baik untuk card view maupun table view)
+        tableContainer.querySelectorAll(".habit-check-btn").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const habitId = btn.dataset.habitId;
+                const dateStr = btn.dataset.date;
+                const { completed, streak } = toggleHabitDate(habitId, dateStr);
+
+                if (completed) {
+                    btn.classList.add("checked");
+                    btn.textContent = "✓";
+                    const h = habits.find((x) => x.id === habitId);
+                    if (h) {
+                        btn.style.background = h.color;
+                        btn.style.borderColor = h.color;
+                    }
+                    toast(`🔥 Habit selesai! Streak: ${streak.currentStreak} hari`, "success", 1600);
+                } else {
+                    btn.classList.remove("checked");
+                    btn.textContent = btn.classList.contains("hmc-today-btn") ? "＋ Tandai Hari Ini" : "";
+                    btn.style.background = "";
+                    btn.style.borderColor = "";
+                    toast("Dibatalkan", "info", 1000);
+                }
+
+                // Refresh tampilan setelah jeda singkat
+                setTimeout(() => paintHabitsView(container), 250);
+            });
+        });
+
+        // Bind edit & delete buttons
+        tableContainer.querySelectorAll("[data-edit-habit]").forEach((btn) => {
+            btn.addEventListener("click", () => {
+                const h = habits.find((x) => x.id === btn.dataset.editHabit);
+                if (h) openHabitModal(h);
+            });
+        });
+
+        tableContainer.querySelectorAll("[data-del-habit]").forEach((btn) => {
+            btn.addEventListener("click", async () => {
+                const ok = await confirmDialog("Hapus kebiasaan ini beserta riwayat streak-nya?", {
+                    danger: true,
+                    confirmLabel: "Hapus Habit"
+                });
+                if (ok) {
+                    removeHabit(btn.dataset.delHabit);
+                    toast("Habit dihapus 🗑️", "info");
+                    paintHabitsView(container);
+                }
+            });
+        });
     }
 
     // 4. Render 30-Day Consistency Heatmaps
@@ -351,39 +445,58 @@ export function paintHabitsView(container) {
                 heatHtml += `
                     <div class="habit-heatmap-item">
                         <div class="heat-item-header">
-                            <div style="display:flex;align-items:center;gap:0.4rem">
-                                <span>${h.icon}</span>
-                                <span style="font-weight:900;font-size:0.92rem;color:var(--text-color)">${escapeHtml(h.name)}</span>
+                            <div class="heat-item-title">
+                                <span class="heat-icon">${h.icon}</span>
+                                <span class="heat-name">${escapeHtml(h.name)}</span>
                             </div>
-                            <div style="display:flex;align-items:center;gap:0.4rem">
+                            <div class="heat-badges">
                                 <span class="badge ${pct >= 70 ? "success" : "purple"}" style="font-size:0.7rem">
                                     ${completedIn30}/30 Hari (${pct}%)
                                 </span>
                                 <span class="badge pink" style="font-size:0.7rem">
-                                    Streak: ${h.currentStreak}d
+                                    🔥 ${h.currentStreak} hr
                                 </span>
                             </div>
                         </div>
 
-                        <div class="heat-grid">
-                            ${last30Days
-                                .map((dt) => {
-                                    const isDone = compSet.has(dt);
-                                    const isToday = dt === todayStr;
-                                    return `
-                                    <div class="heat-dot ${isDone ? "done" : ""} ${isToday ? "today" : ""}"
-                                        style="${isDone ? `background:${h.color}` : ""}"
-                                        title="${formatDateShort(dt)}: ${isDone ? "Selesai ✓" : "Tidak selesai"}">
-                                    </div>
-                                `;
-                                })
-                                .join("")}
+                        <div class="heat-grid-wrap">
+                            <div class="heat-grid">
+                                ${last30Days
+                                    .map((dt) => {
+                                        const isDone = compSet.has(dt);
+                                        const isToday = dt === todayStr;
+                                        return `
+                                        <div class="heat-dot ${isDone ? "done" : ""} ${isToday ? "today" : ""}"
+                                            style="${isDone ? `background:${h.color};border-color:${h.color};` : ""}"
+                                            data-date="${dt}"
+                                            data-habit="${escapeHtml(h.name)}"
+                                            data-status="${isDone ? "Selesai ✓" : "Belum selesai"}"
+                                            title="${formatDateShort(dt)}: ${isDone ? "Selesai ✓" : "Belum selesai"}">
+                                        </div>
+                                    `;
+                                    })
+                                    .join("")}
+                            </div>
+                            <div class="heat-legend">
+                                <span>30 hari lalu (${formatDateShort(last30Days[0])})</span>
+                                <span>Hari ini (${formatDateShort(todayStr)})</span>
+                            </div>
                         </div>
                     </div>
                 `;
             });
 
             heatmapList.innerHTML = heatHtml;
+
+            // Tap pada dot heatmap untuk info tooltip mobile yang interaktif
+            heatmapList.querySelectorAll(".heat-dot").forEach((dot) => {
+                dot.addEventListener("click", () => {
+                    const dt = dot.dataset.date;
+                    const name = dot.dataset.habit;
+                    const st = dot.dataset.status;
+                    toast(`${name} · ${formatDateShort(dt)}: ${st}`, "info", 1500);
+                });
+            });
         }
     }
 }

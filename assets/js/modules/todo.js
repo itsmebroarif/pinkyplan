@@ -15,6 +15,7 @@ import { escapeHtml, toISODate, formatDateShort, calcProgress } from "../helpers
 import { openModal, closeModal, confirmDialog } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { priorityConfig } from "../config.js";
+import { startPomodoroForTask } from "../components/pomodoro.js";
 
 let activeStatusFilter = "all";
 let activeCategoryFilter = "";
@@ -436,6 +437,19 @@ function bindTodoItemEvents(listEl, container) {
         });
     });
 
+    listEl.querySelectorAll("[data-pomo-todo]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const todo = getTodos().find((t) => t.id === btn.dataset.pomoTodo);
+            if (todo) {
+                startPomodoroForTask({
+                    id: todo.id,
+                    title: todo.title,
+                    type: "todo"
+                });
+            }
+        });
+    });
+
     listEl.querySelectorAll("[data-edit]").forEach((btn) => {
         btn.addEventListener("click", () => {
             const todo = getTodos().find((t) => t.id === btn.dataset.edit);
@@ -485,6 +499,7 @@ function todoItemHtml(t) {
                 </div>
             </div>
             <div class="todo-actions">
+                <button type="button" class="icon-btn" data-pomo-todo="${t.id}" aria-label="Mulai Pomodoro" title="Fokus Pomodoro untuk tugas ini">🍅</button>
                 <button type="button" class="icon-btn" data-edit="${t.id}" aria-label="Edit todo" title="Edit Kategori / Schedule / Detail">✏️</button>
                 <button type="button" class="icon-btn danger" data-delete="${t.id}" aria-label="Hapus">🗑️</button>
             </div>

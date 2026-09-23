@@ -6,6 +6,42 @@ import { storage } from "./storage.js";
 import { defaultCategories, hydrationConfig } from "./config.js";
 import { uid, toISODate } from "./helpers.js";
 
+/** Default daily habits untuk pengguna baru */
+export const defaultHabits = [
+    {
+        id: "hab-1",
+        name: "Minum 2L Air Putih",
+        icon: "💧",
+        color: "#4DA6FF",
+        completedDates: [],
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "hab-2",
+        name: "Olahraga / Stretching",
+        icon: "🏃",
+        color: "#FF69B4",
+        completedDates: [],
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "hab-3",
+        name: "Membaca / Belajar 15 Menit",
+        icon: "📚",
+        color: "#9B5DE5",
+        completedDates: [],
+        createdAt: new Date().toISOString()
+    },
+    {
+        id: "hab-4",
+        name: "Tidur Teratur & Cukup",
+        icon: "🌙",
+        color: "#F59E0B",
+        completedDates: [],
+        createdAt: new Date().toISOString()
+    }
+];
+
 /** @type {Object} State aplikasi tunggal. */
 const appState = {
     currentUser: null,
@@ -13,11 +49,13 @@ const appState = {
     categories: [],
     todos: [],
     schedules: [],
+    habits: [],
     hydration: null,
     meals: [],
     settings: {},
     quotes: [],
-    statsHistory: {}
+    statsHistory: {},
+    pomodoroStats: {}
 };
 
 const listeners = new Set();
@@ -54,6 +92,7 @@ export function loadState() {
     appState.categories = storage.get("categories", defaultCategories);
     appState.todos = storage.get("todos", []);
     appState.schedules = storage.get("schedules", []);
+    appState.habits = storage.get("habits", defaultHabits);
     appState.settings = storage.get("settings", {
         theme: null,
         animation: true,
@@ -77,6 +116,19 @@ export function loadState() {
     } else {
         appState.hydration = savedHydration;
     }
+
+    const savedPomodoro = storage.get("pomodoroStats", null);
+    if (!savedPomodoro || savedPomodoro.date !== today) {
+        appState.pomodoroStats = {
+            date: today,
+            completedToday: 0,
+            sessions: []
+        };
+        storage.set("pomodoroStats", appState.pomodoroStats);
+    } else {
+        appState.pomodoroStats = savedPomodoro;
+    }
+
     notify();
 }
 
@@ -87,10 +139,12 @@ function persistAll() {
     storage.set("categories", appState.categories);
     storage.set("todos", appState.todos);
     storage.set("schedules", appState.schedules);
+    storage.set("habits", appState.habits);
     storage.set("settings", appState.settings);
     storage.set("quotes", appState.quotes);
     storage.set("statsHistory", appState.statsHistory);
     storage.set("meals", appState.meals);
+    storage.set("pomodoroStats", appState.pomodoroStats);
 }
 
 /** @returns {Object} Salinan state saat ini. */
@@ -579,6 +633,201 @@ export function getStatsHistory() {
     return appState.statsHistory;
 }
 
+/* ---------------- Daily Habits & Streak Tracking ---------------- */
+
+/**
+ * Hitung streak habits (current streak, best streak, total, status hari ini).
+ *
+ * @param {string[]} completedDates - Array of ISO date string "YYYY-MM-DD".
+ * @returns {{currentStreak: number, bestStreak: number, totalCompletions: number, isCompletedToday: boolean}}
+ */
+export function calculateHabitStreak(completedDates = []) {
+    if (!completedDates || !completedDates.length) {
+        return { currentStreak: 0, bestStreak: 0, totalCompletions: 0, isCompletedToday: false };
+    }
+
+    const todayStr = toISODate();
+    const dateSet = new Set(completedDates);
+    const isCompletedToday = dateSet.has(todayStr);
+
+    // Hitung current streak
+    let currentStreak = 0;
+    const checkDate = new Date();
+
+    // Jika hari ini belum dicentang, cek apakah kemarin selesai (streak tetap hidup)
+    if (!dateSet.has(toISODate(checkDate))) {
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    while (dateSet.has(toISODate(checkDate))) {
+        currentStreak++;
+        checkDate.setDate(checkDate.getDate() - 1);
+    }
+
+    // Hitung best streak sepanjang masa
+    const sorted = Array.from(dateSet).sort();
+    let bestStreak = 0;
+    let currentRun = 0;
+    let prevDate = null;
+
+    sorted.forEach((dateStr) => {
+        const d = new Date(dateStr + "T00:00:00");
+        if (prevDate) {
+            const diffDays = Math.round((d.getTime() - prevDate.getTime()) / (1000 * 60 * 60 * 24));
+            if (diffDays === 1) {
+                currentRun++;
+            } else if (diffDays > 1) {
+                currentRun = 1;
+            }
+        } else {
+            currentRun = 1;
+        }
+        if (currentRun > bestStreak) bestStreak = currentRun;
+        prevDate = d;
+    });
+
+    return {
+        currentStreak,
+        bestStreak: Math.max(bestStreak, currentStreak),
+        totalCompletions: completedDates.length,
+        isCompletedToday
+    };
+}
+
+/**
+ * Ambil daftar seluruh habits dengan kalkulasi streak masing-masing.
+ *
+ * @returns {Array} Daftar habits.
+ */
+export function getHabits() {
+    return (appState.habits || []).map((h) => {
+        const streakData = calculateHabitStreak(h.completedDates || []);
+        return {
+            ...h,
+            ...streakData
+        };
+    });
+}
+
+/**
+ * Tambah Habit baru.
+ *
+ * @param {Object} data - { name, icon, color, description }
+ * @returns {Object} Habit baru.
+ */
+export function addHabit(data) {
+    const habit = {
+        id: uid("HAB"),
+        name: data.name,
+        icon: data.icon || "🌱",
+        color: data.color || "#FF69B4",
+        description: data.description || "",
+        completedDates: [],
+        createdAt: new Date().toISOString()
+    };
+    appState.habits.push(habit);
+    storage.set("habits", appState.habits);
+    notify();
+    return habit;
+}
+
+/**
+ * Update data Habit.
+ *
+ * @param {string} id - ID habit.
+ * @param {Object} patch - Field yang diupdate.
+ * @returns {Object|null}
+ */
+export function updateHabit(id, patch) {
+    const h = appState.habits.find((x) => x.id === id);
+    if (!h) return null;
+    Object.assign(h, patch);
+    storage.set("habits", appState.habits);
+    notify();
+    return h;
+}
+
+/**
+ * Hapus Habit.
+ *
+ * @param {string} id - ID habit.
+ */
+export function removeHabit(id) {
+    appState.habits = appState.habits.filter((h) => h.id !== id);
+    storage.set("habits", appState.habits);
+    notify();
+}
+
+/**
+ * Toggle status penyelesaian habit pada tanggal tertentu (ISO "YYYY-MM-DD").
+ *
+ * @param {string} habitId - ID habit.
+ * @param {string} [date] - ISO date string (default hari ini).
+ * @returns {{completed: boolean, streak: Object}}
+ */
+export function toggleHabitDate(habitId, date = toISODate()) {
+    const habit = appState.habits.find((h) => h.id === habitId);
+    if (!habit) return { completed: false, streak: null };
+
+    if (!Array.isArray(habit.completedDates)) {
+        habit.completedDates = [];
+    }
+
+    const set = new Set(habit.completedDates);
+    let completed = false;
+    if (set.has(date)) {
+        set.delete(date);
+        completed = false;
+    } else {
+        set.add(date);
+        completed = true;
+    }
+
+    habit.completedDates = Array.from(set).sort();
+    storage.set("habits", appState.habits);
+    notify();
+
+    const streak = calculateHabitStreak(habit.completedDates);
+    return { completed, streak };
+}
+
+/* ---------------- Pomodoro Stats ---------------- */
+
+/**
+ * Ambil statistik Pomodoro hari ini.
+ *
+ * @returns {Object}
+ */
+export function getPomodoroStats() {
+    const today = toISODate();
+    if (!appState.pomodoroStats || appState.pomodoroStats.date !== today) {
+        appState.pomodoroStats = {
+            date: today,
+            completedToday: 0,
+            sessions: []
+        };
+        storage.set("pomodoroStats", appState.pomodoroStats);
+    }
+    return appState.pomodoroStats;
+}
+
+/**
+ * Catat satu sesi Pomodoro selesai.
+ *
+ * @param {Object} [taskInfo] - { taskId, taskTitle, taskType, durationMinutes }
+ */
+export function recordPomodoroSession(taskInfo = {}) {
+    const stats = getPomodoroStats();
+    stats.completedToday = (stats.completedToday || 0) + 1;
+    if (!Array.isArray(stats.sessions)) stats.sessions = [];
+    stats.sessions.push({
+        time: new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }),
+        ...taskInfo
+    });
+    storage.set("pomodoroStats", appState.pomodoroStats);
+    notify();
+}
+
 /* ---------------- Import / Export ---------------- */
 
 /**
@@ -594,10 +843,12 @@ export function exportData() {
         settings: appState.settings,
         categories: appState.categories,
         schedules: appState.schedules,
+        habits: appState.habits,
         todos: appState.todos,
         hydration: appState.hydration,
         meals: appState.meals,
-        statsHistory: appState.statsHistory
+        statsHistory: appState.statsHistory,
+        pomodoroStats: appState.pomodoroStats
     };
 }
 
@@ -621,6 +872,7 @@ export function importData(payload) {
     appState.categories = Array.isArray(payload.categories) ? payload.categories : defaultCategories;
     appState.todos = payload.todos;
     appState.schedules = payload.schedules;
+    if (Array.isArray(payload.habits)) appState.habits = payload.habits;
     if (payload.settings) appState.settings = { ...appState.settings, ...payload.settings };
     if (payload.statsHistory) appState.statsHistory = payload.statsHistory;
     if (Array.isArray(payload.meals)) appState.meals = payload.meals;
@@ -636,6 +888,7 @@ export function resetAllData() {
     appState.categories = [...defaultCategories];
     appState.todos = [];
     appState.schedules = [];
+    appState.habits = [...defaultHabits];
     appState.statsHistory = {};
     appState.meals = [];
     appState.settings = { theme: null, animation: true, notifications: false, hydrationGoal: hydrationConfig.dailyGoal };
@@ -645,6 +898,7 @@ export function resetAllData() {
         goal: hydrationConfig.dailyGoal,
         log: []
     };
+    appState.pomodoroStats = { date: toISODate(), completedToday: 0, sessions: [] };
     persistAll();
     persistHydration();
     notify();

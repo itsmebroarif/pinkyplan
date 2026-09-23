@@ -1,7 +1,7 @@
 /**
  * Dashboard — greeting, quote, progress, schedule, hydration, quick todo.
  */
-import { getState, filterTodos, getSchedulesByDate, addTodo, getHydration, addWater, getMealsByDate } from "../store.js";
+import { getState, filterTodos, getSchedulesByDate, addTodo, getHydration, addWater, getMealsByDate, getHabits, toggleHabitDate, getPomodoroStats } from "../store.js";
 import {
     getGreeting,
     formatDateLong,
@@ -14,6 +14,8 @@ import {
 import { getDailyQuote, loadQuotes, quoteCardHtml } from "./quote.js";
 import { openTodoModal, paintTodoList } from "./todo.js";
 import { openScheduleModal } from "./schedule.js";
+import { openHabitModal } from "./habits.js";
+import { togglePomodoro } from "../components/pomodoro.js";
 import { openModal, closeModal } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { navigate } from "../router.js";
@@ -81,6 +83,9 @@ export async function renderDashboard(container) {
     const progress = calcProgress(todosToday);
     const schedules = getSchedulesByDate(today);
     const hydration = getHydration();
+    const habits = getHabits();
+    const pomoStats = getPomodoroStats();
+    const todayHabitsDone = habits.filter((h) => h.isCompletedToday).length;
     const now = new Date();
     const meals = getMealsByDate(today);
     const mealPct = Math.min(100, Math.round((meals.length / mealConfig.dailyMin) * 100));
@@ -230,6 +235,62 @@ export async function renderDashboard(container) {
                     </div>
                 </div>
 
+                <div class="card hoverable" id="dash-habits-card">
+                    <div class="card-header">
+                        <div class="card-title">🌱 Daily Habits</div>
+                        <span class="badge ${habits.length && todayHabitsDone === habits.length ? "success" : "pink"}" id="dash-habit-badge">
+                            ${todayHabitsDone}/${habits.length}
+                        </span>
+                    </div>
+                    <div class="dash-habit-list" id="dash-habit-list" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.75rem">
+                        ${
+                            habits.length
+                                ? habits
+                                    .slice(0, 4)
+                                    .map(
+                                        (h) => `
+                                    <div class="dash-habit-item ${h.isCompletedToday ? "done" : ""}" style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0.6rem;background:var(--surface-2);border-radius:var(--radius-sm);border-left:4px solid ${h.color}">
+                                        <div style="display:flex;align-items:center;gap:0.45rem;min-width:0">
+                                            <span style="font-size:1.1rem">${h.icon}</span>
+                                            <div style="min-width:0">
+                                                <div style="font-weight:800;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(h.name)}</div>
+                                                <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted)">
+                                                    🔥 Streak: <strong>${h.currentStreak} hari</strong>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-sm ${h.isCompletedToday ? "btn-secondary" : "btn-primary"}"
+                                            data-dash-habit="${h.id}" style="padding:0.25rem 0.6rem;font-size:0.75rem">
+                                            ${h.isCompletedToday ? "✓ Selesai" : "Tandai"}
+                                        </button>
+                                    </div>
+                                `
+                                    )
+                                    .join("")
+                                : `<p class="text-muted" style="font-size:0.85rem;font-weight:700">Belum ada habit harian.</p>`
+                        }
+                    </div>
+                    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
+                        <button type="button" class="btn btn-primary btn-sm" id="dash-add-habit">＋ Habit</button>
+                        <button type="button" class="btn btn-ghost btn-sm" data-goto="/habits">Buka habit tracker →</button>
+                    </div>
+                </div>
+
+                <div class="card hoverable" id="dash-pomodoro-card">
+                    <div class="card-header">
+                        <div class="card-title">🍅 Pomodoro Focus</div>
+                        <span class="badge pink">${pomoStats.completedToday} sesi hari ini</span>
+                    </div>
+                    <p class="text-muted" style="font-size:0.85rem;font-weight:700;margin-bottom:0.75rem">
+                        Tingkatkan fokus saat menyelesaikan tugas dengan timer 25 menit fokus & istirahat teratur.
+                    </p>
+                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+                        <button type="button" class="btn btn-primary btn-sm btn-block" id="dash-start-pomo">
+                            🍅 Buka Pomodoro Timer
+                        </button>
+                    </div>
+                </div>
+
                 <div class="card hoverable">
                     <div class="card-header">
                         <div class="card-title">📈 Quick Stats</div>
@@ -269,8 +330,19 @@ export async function renderDashboard(container) {
 
     container.querySelector("#dash-add-todo")?.addEventListener("click", () => openTodoModal());
     container.querySelector("#dash-add-sched")?.addEventListener("click", () => openScheduleModal(null, today));
+    container.querySelector("#dash-add-habit")?.addEventListener("click", () => openHabitModal());
+    container.querySelector("#dash-start-pomo")?.addEventListener("click", () => togglePomodoro(true));
     container.querySelector("#dash-meal-add")?.addEventListener("click", () => openMealModal(() => paintDashboardMeals(container)));
     container.querySelector("#dash-meal-warn")?.addEventListener("click", () => openMealModal(() => paintDashboardMeals(container)));
+
+    container.querySelectorAll("[data-dash-habit]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const id = btn.dataset.dashHabit;
+            const res = toggleHabitDate(id, today);
+            toast(res.completed ? "🔥 Habit ditandai selesai!" : "Dibatalkan", res.completed ? "success" : "info");
+            renderDashboard(container);
+        });
+    });
 
     container.querySelector("#dash-quick-form")?.addEventListener("submit", (e) => {
         e.preventDefault();

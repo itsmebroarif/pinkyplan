@@ -12,6 +12,7 @@ import { initFab, toggleQuickMenu, setFabVisible, openMoreMenu } from "./compone
 import { showAuthIfNeeded, hideAuth } from "./modules/auth.js";
 import { renderDashboard } from "./modules/dashboard.js";
 import { renderTodoPage, openTodoModal } from "./modules/todo.js";
+import { renderHabitsPage, openHabitModal } from "./modules/habits.js";
 import { renderSchedulePage, openScheduleModal } from "./modules/schedule.js";
 import { renderCalendarPage } from "./modules/calendar.js";
 import { renderActivityPage, openCategoryModal } from "./modules/activity.js";
@@ -21,6 +22,7 @@ import { renderStatisticsPage } from "./modules/statistics.js";
 import { renderQuotesPage } from "./modules/quote.js";
 import { renderGamesPage } from "./modules/games.js";
 import { renderSettingsPage } from "./modules/settings.js";
+import { initPomodoro, togglePomodoro } from "./components/pomodoro.js";
 import { toast } from "./components/ui.js";
 import { toISODate, escapeHtml } from "./helpers.js";
 import { storage } from "./storage.js";
@@ -94,6 +96,12 @@ function handleQuickAdd(kind) {
         case "schedule":
             openScheduleModal(null, toISODate());
             break;
+        case "habit":
+            openHabitModal();
+            break;
+        case "pomodoro":
+            togglePomodoro(true);
+            break;
         case "category":
             openCategoryModal();
             break;
@@ -134,6 +142,7 @@ function setupRoutes() {
     const pageMap = {
         dashboard: (c) => renderDashboard(c),
         todo: (c) => renderTodoPage(c),
+        habits: (c) => renderHabitsPage(c),
         schedule: (c) => renderSchedulePage(c),
         calendar: (c) => renderCalendarPage(c),
         activity: (c) => renderActivityPage(c),
@@ -334,6 +343,7 @@ async function main() {
 
     renderChrome();
     initFab(handleQuickAdd);
+    initPomodoro();
 
     // Re-render chrome (bukan full chrome rebuild yang menimpa auth) saat state berubah
     subscribe(() => {

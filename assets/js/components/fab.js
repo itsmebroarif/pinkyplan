@@ -19,6 +19,8 @@ export function initFab(onAdd) {
     const items = [
         { id: "todo", icon: "📋", label: "Add Todo" },
         { id: "schedule", icon: "📅", label: "Add Schedule" },
+        { id: "habit", icon: "🌱", label: "Add Habit" },
+        { id: "pomodoro", icon: "🍅", label: "Pomodoro" },
         { id: "category", icon: "🎯", label: "Add Activity" },
         { id: "water", icon: "💧", label: "Add Water" },
         { id: "meal", icon: "🍽️", label: "Add Meal" }

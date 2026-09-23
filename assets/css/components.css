@@ -1088,3 +1088,517 @@
     border-radius: var(--radius-sm);
     min-height: 60px;
 }
+
+/* ==========================================================================
+   Pomodoro Timer Component Styles
+   ========================================================================== */
+.pomodoro-card {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    max-width: calc(100vw - 32px);
+    background: var(--surface);
+    border: 2px solid var(--ink, #1a1a1a);
+    border-radius: 16px;
+    box-shadow: 5px 5px 0 var(--ink, #1a1a1a);
+    z-index: 9999;
+    padding: 1.15rem;
+    animation: pop-in 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pomo-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.45rem;
+    border-bottom: 1.5px dashed var(--border-color, #ffd1dc);
+}
+
+.pomo-title {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-weight: 900;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.pomo-window-actions {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.pomo-modes {
+    display: flex;
+    background: var(--surface-2);
+    padding: 3px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color, #ffd1dc);
+    gap: 3px;
+    margin-bottom: 0.85rem;
+}
+
+.pomo-mode-btn {
+    flex: 1;
+    padding: 0.35rem 0.2rem;
+    font-size: 0.72rem;
+    font-weight: 800;
+    border: none;
+    border-radius: 7px;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: all 0.15s ease;
+    text-align: center;
+}
+
+.pomo-mode-btn:hover {
+    background: rgba(255, 105, 180, 0.12);
+}
+
+.pomo-mode-btn.active {
+    background: var(--primary, #FF69B4);
+    color: #fff;
+    box-shadow: 1.5px 1.5px 0 var(--ink, #1a1a1a);
+}
+
+.pomo-clock-container {
+    text-align: center;
+    padding: 0.4rem 0;
+}
+
+.pomo-clock {
+    font-family: var(--font-pixel, monospace);
+    font-size: 2.85rem;
+    font-weight: 900;
+    line-height: 1;
+    letter-spacing: 2px;
+    color: var(--text-color);
+    text-shadow: 2px 2px 0 var(--surface-2);
+}
+
+.pomo-mode-tag {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-top: 0.35rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pomo-progress-track {
+    height: 8px;
+    background: var(--surface-2);
+    border-radius: 999px;
+    overflow: hidden;
+    border: 1px solid var(--border-color, #ffd1dc);
+    margin: 0.5rem 0 0.85rem;
+}
+
+.pomo-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary, #FF69B4), var(--secondary, #9B5DE5));
+    border-radius: 999px;
+    transition: width 0.3s ease;
+}
+
+.pomo-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 0.8rem;
+}
+
+.pomo-main-btn {
+    min-width: 120px;
+    font-weight: 900;
+    box-shadow: 3px 3px 0 var(--ink, #1a1a1a);
+}
+
+.pomo-adjust-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.3rem;
+    margin-bottom: 0.85rem;
+    padding: 0.3rem 0.5rem;
+    background: var(--surface-2);
+    border-radius: 8px;
+}
+
+.adjust-chip {
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 0.2rem 0.45rem;
+    border-radius: 6px;
+    border: 1px solid var(--border-color, #ffd1dc);
+    background: var(--surface);
+    cursor: pointer;
+    color: var(--text-color);
+}
+
+.adjust-chip:hover {
+    background: var(--primary-light, #ffe4ec);
+    border-color: var(--primary, #FF69B4);
+}
+
+.pomo-task-linker {
+    border-top: 1px dashed var(--border-color, #ffd1dc);
+    padding-top: 0.75rem;
+}
+
+.pomo-task-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    margin-bottom: 0.4rem;
+}
+
+.pomo-active-task-box {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 0.45rem 0.6rem;
+    background: var(--surface-2);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary, #FF69B4);
+}
+
+.pomo-task-info {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.pomo-task-name {
+    font-weight: 800;
+    font-size: 0.82rem;
+    color: var(--text-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pomo-task-badge {
+    font-size: 0.68rem;
+    font-weight: 800;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    background: var(--surface);
+    border: 1px solid var(--border-color, #ffd1dc);
+}
+
+.pomodoro-floating-pill {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: var(--surface);
+    border: 2px solid var(--ink, #1a1a1a);
+    box-shadow: 4px 4px 0 var(--ink, #1a1a1a);
+    border-radius: 999px;
+    padding: 0.45rem 0.85rem;
+    animation: pop-in 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pomodoro-floating-pill .p-time {
+    font-family: var(--font-pixel, monospace);
+    font-weight: 900;
+    font-size: 0.95rem;
+    color: var(--text-color);
+}
+
+.pomodoro-floating-pill .p-task-title {
+    font-size: 0.78rem;
+    font-weight: 800;
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-muted);
+}
+
+.pomodoro-floating-pill .p-btn-icon {
+    background: none;
+    border: none;
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    color: var(--text-color);
+}
+
+.pomodoro-floating-pill .p-btn-icon:hover {
+    background: var(--surface-2);
+}
+
+.pomodoro-nav-btn.running {
+    animation: pulse 1.2s infinite;
+    color: var(--primary, #FF69B4);
+    font-weight: 900;
+}
+
+.nav-pomo-text {
+    font-family: var(--font-pixel, monospace);
+    font-size: 0.75rem;
+    margin-left: 0.25rem;
+}
+
+/* ==========================================================================
+   Daily Habit Tracker Component Styles
+   ========================================================================== */
+.habit-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.habit-matrix-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px dashed var(--border-color, #ffd1dc);
+}
+
+.habit-week-title {
+    font-weight: 900;
+    font-size: 1.05rem;
+    color: var(--text-color);
+}
+
+.habit-week-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.habit-table-wrapper {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border-radius: var(--radius-sm);
+}
+
+.habit-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+}
+
+.habit-table th {
+    padding: 0.65rem 0.5rem;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-align: center;
+    border-bottom: 2px solid var(--border-color, #ffd1dc);
+    color: var(--text-color);
+}
+
+.th-habit-name {
+    text-align: left !important;
+    min-width: 190px;
+}
+
+.th-streak {
+    min-width: 95px;
+    text-align: center !important;
+}
+
+.th-day.today-col {
+    background: rgba(255, 105, 180, 0.09);
+    border-radius: 8px 8px 0 0;
+    color: var(--primary, #FF69B4);
+}
+
+.day-th-name {
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    font-weight: 800;
+}
+
+.day-th-num {
+    font-family: var(--font-pixel, monospace);
+    font-size: 0.95rem;
+    font-weight: 900;
+}
+
+.habit-row td {
+    padding: 0.7rem 0.4rem;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border-color, #ffd1dc);
+}
+
+.habit-row:hover td {
+    background: rgba(255, 105, 180, 0.03);
+}
+
+.td-habit-info {
+    min-width: 190px;
+}
+
+.habit-identity {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.habit-icon {
+    width: 36px;
+    height: 36px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.08);
+}
+
+.habit-name {
+    font-weight: 900;
+    font-size: 0.92rem;
+    color: var(--text-color);
+    line-height: 1.25;
+}
+
+.habit-desc {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    line-height: 1.2;
+    margin-top: 0.15rem;
+}
+
+.td-streak {
+    text-align: center;
+}
+
+.streak-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: var(--surface-2);
+    font-weight: 900;
+    font-size: 0.75rem;
+    border: 1px solid var(--border-color, #ffd1dc);
+}
+
+.streak-pill.active {
+    background: #fff3e0;
+    border-color: #ffb74d;
+    color: #e65100;
+    box-shadow: 1px 1px 0 rgba(230,81,0,0.18);
+}
+
+.best-streak-sub {
+    font-size: 0.68rem;
+    font-weight: 700;
+    color: var(--text-muted);
+    margin-top: 0.2rem;
+    text-align: center;
+}
+
+.td-day-check {
+    text-align: center;
+}
+
+.td-day-check.today-cell {
+    background: rgba(255, 105, 180, 0.06);
+}
+
+.habit-check-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 2px dashed var(--border-color, #ffd1dc);
+    background: var(--surface);
+    cursor: pointer;
+    display: inline-grid;
+    place-items: center;
+    font-size: 0.92rem;
+    font-weight: 900;
+    color: #fff;
+    transition: all 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.habit-check-btn:hover {
+    transform: scale(1.15);
+    border-style: solid;
+}
+
+.habit-check-btn:active {
+    transform: scale(0.92);
+}
+
+.habit-check-btn.checked {
+    border-style: solid;
+    box-shadow: 2px 2px 0 var(--ink, #1a1a1a);
+    transform: scale(1.05);
+}
+
+.habit-heatmaps-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+}
+
+.habit-heatmap-item {
+    padding: 0.75rem 0.85rem;
+    background: var(--surface-2);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-color, #ffd1dc);
+}
+
+.heat-item-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.55rem;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+}
+
+.heat-grid {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.heat-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 3px;
+    background: rgba(0,0,0,0.08);
+    transition: transform 0.1s ease;
+    cursor: pointer;
+}
+
+.heat-dot.today {
+    outline: 2px solid var(--ink, #1a1a1a);
+}
+
+.heat-dot.done {
+    box-shadow: 1px 1px 0 rgba(0,0,0,0.15);
+}
+
+.heat-dot:hover {
+    transform: scale(1.35);
+}
+

@@ -9,6 +9,7 @@ import { openModal, closeModal, confirmDialog } from "./modal.js";
 import { logout } from "../modules/auth.js";
 import { navigate } from "../router.js";
 import { toast } from "./ui.js";
+import { togglePomodoro } from "./pomodoro.js";
 
 /**
  * Render navbar atas.
@@ -37,6 +38,9 @@ export function renderNavbar() {
 
     const right = el(`
         <div class="navbar-right">
+            <button type="button" class="navbar-btn pomodoro-nav-btn" id="pomodoro-nav-btn" aria-label="Toggle Pomodoro Timer" title="Pomodoro Focus Timer">
+                🍅
+            </button>
             <button type="button" class="navbar-btn" id="notif-btn" aria-label="Notifikasi" title="Notifikasi">
                 🔔<span class="dot" hidden></span>
             </button>
@@ -49,6 +53,10 @@ export function renderNavbar() {
             </button>
         </div>
     `);
+
+    right.querySelector("#pomodoro-nav-btn")?.addEventListener("click", () => {
+        togglePomodoro();
+    });
 
     right.querySelector("#notif-btn")?.addEventListener("click", () => {
         toast("Tidak ada notifikasi baru 💤", "info");

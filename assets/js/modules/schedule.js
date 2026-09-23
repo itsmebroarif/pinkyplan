@@ -15,12 +15,14 @@ import {
     removeTodo,
     getCategories,
     getCategory,
-    filterTodos
+    filterTodos,
+    getTodos
 } from "../store.js";
 import { escapeHtml, toISODate, uid, calcProgress, formatDateShort, formatDateLong } from "../helpers.js";
 import { openModal, closeModal, confirmDialog } from "../components/modal.js";
 import { toast } from "../components/ui.js";
 import { priorityConfig } from "../config.js";
+import { startPomodoroForTask } from "../components/pomodoro.js";
 
 /** State aktif untuk view rentang tanggal di halaman schedule */
 let scheduleRange = {
@@ -307,6 +309,32 @@ function bindScheduleActionListeners(listEl, container, startDate, endDate) {
         paintScheduleList(container, startDate, endDate);
     };
 
+    listEl.querySelectorAll("[data-pomo-sched]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const s = getSchedules().find((x) => x.id === btn.dataset.pomoSched);
+            if (s) {
+                startPomodoroForTask({
+                    id: s.id,
+                    title: s.title,
+                    type: "schedule"
+                });
+            }
+        });
+    });
+
+    listEl.querySelectorAll("[data-pomo-todo]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+            const t = getTodos().find((x) => x.id === btn.dataset.pomoTodo);
+            if (t) {
+                startPomodoroForTask({
+                    id: t.id,
+                    title: t.title,
+                    type: "todo"
+                });
+            }
+        });
+    });
+
     listEl.querySelectorAll("[data-edit-sched]").forEach((btn) => {
         btn.addEventListener("click", () => {
             const s = getSchedules().find((x) => x.id === btn.dataset.editSched);
@@ -454,7 +482,10 @@ function scheduleCardHtml(s, index) {
                                         ${t.date ? `<span>📅 ${formatDateShort(t.date)}</span>` : ""}
                                     </div>
                                 </div>
-                                <button type="button" class="icon-btn danger" data-del-todo="${t.id}" aria-label="Hapus">✕</button>
+                                <span style="display:flex;gap:0.2rem">
+                                    <button type="button" class="icon-btn" data-pomo-todo="${t.id}" title="Mulai Pomodoro untuk tugas ini">🍅</button>
+                                    <button type="button" class="icon-btn danger" data-del-todo="${t.id}" aria-label="Hapus">✕</button>
+                                </span>
                             </div>
                         `
                             )
@@ -485,6 +516,7 @@ function scheduleCardHtml(s, index) {
                     </div>
                 </div>
                 <span style="display:flex;gap:0.3rem">
+                    <button type="button" class="icon-btn" data-pomo-sched="${s.id}" title="Fokus Pomodoro untuk jadwal ini" aria-label="Mulai Pomodoro">🍅</button>
                     <button type="button" class="icon-btn" data-edit-sched="${s.id}" aria-label="Edit">✏️</button>
                     <button type="button" class="icon-btn danger" data-del-sched="${s.id}" aria-label="Hapus">🗑️</button>
                 </span>

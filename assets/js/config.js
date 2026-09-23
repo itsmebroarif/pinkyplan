@@ -50,6 +50,7 @@ export const userConfig = {
 export const navigationConfig = [
     { id: "dashboard", label: "Dashboard", icon: "🏠", route: "/dashboard", mobile: true, desktop: true },
     { id: "todo", label: "Todo", icon: "📋", route: "/todo", mobile: true, desktop: true },
+    { id: "habits", label: "Habits", icon: "🌱", route: "/habits", mobile: false, desktop: true },
     { id: "schedule", label: "Schedule", icon: "📅", route: "/schedule", mobile: false, desktop: true },
     { id: "calendar", label: "Calendar", icon: "🗓️", route: "/calendar", mobile: true, desktop: true },
     { id: "activity", label: "Activity", icon: "🎯", route: "/activity", mobile: false, desktop: true },

@@ -90,6 +90,19 @@
     .filter-chip { min-height: 42px; }
 }
 
+/* Mobile & Tablet adjustments for Pomodoro Widget & Habits */
+@media (max-width: 1023px) {
+    .pomodoro-card,
+    .pomodoro-floating-pill {
+        bottom: calc(var(--bottomnav-h, 60px) + 14px);
+        right: 12px;
+    }
+
+    .pomodoro-card {
+        width: min(340px, calc(100vw - 24px));
+    }
+}
+
 /* ---------- Print ---------- */
 @media print {
     .sidebar,

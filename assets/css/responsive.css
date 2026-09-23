@@ -23,7 +23,9 @@
 
     .stat-grid { grid-template-columns: repeat(2, 1fr); }
 
-    .calendar-day { font-size: 0.78rem; min-height: 34px; }
+    .calendar-day { font-size: 0.78rem; min-height: 36px; padding: 2px; }
+    .calendar-day .day-num { font-size: 0.78rem; }
+    .calendar-day .day-badge { min-width: 14px; height: 14px; font-size: 0.5rem; padding: 0 2px; }
 
     .toast { font-size: 0.82rem; padding: 0.55rem 0.7rem; }
 }

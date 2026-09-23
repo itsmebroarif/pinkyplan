@@ -296,6 +296,7 @@ export function addSchedule(data) {
     const schedule = {
         id: uid("SCH"),
         date: data.date || toISODate(),
+        endDate: data.endDate && data.endDate >= (data.date || toISODate()) ? data.endDate : null,
         startTime: data.startTime || "09:00",
         endTime: data.endTime || "10:00",
         title: data.title.trim(),
@@ -341,14 +342,40 @@ export function removeSchedule(id) {
 
 /**
  * Schedule berdasarkan tanggal.
+ * Mendukung schedule single-day maupun rentang (endDate).
  *
  * @param {string} date - ISO date.
  * @returns {Array}
  */
 export function getSchedulesByDate(date) {
     return appState.schedules
-        .filter((s) => s.date === date)
+        .filter((s) => {
+            if (s.date === date) return true;
+            if (s.endDate && s.date <= date && date <= s.endDate) return true;
+            return false;
+        })
         .sort((a, b) => a.startTime.localeCompare(b.startTime));
+}
+
+/**
+ * Schedule berdasarkan rentang tanggal.
+ *
+ * @param {string} startDate - ISO date (YYYY-MM-DD).
+ * @param {string} endDate - ISO date (YYYY-MM-DD).
+ * @returns {Array}
+ */
+export function getSchedulesByRange(startDate, endDate) {
+    return appState.schedules
+        .filter((s) => {
+            const sStart = s.date;
+            const sEnd = s.endDate || s.date;
+            return sStart <= endDate && sEnd >= startDate;
+        })
+        .sort((a, b) => {
+            const dc = a.date.localeCompare(b.date);
+            if (dc !== 0) return dc;
+            return a.startTime.localeCompare(b.startTime);
+        });
 }
 
 /**

@@ -23,6 +23,7 @@ import { renderQuotesPage } from "./modules/quote.js";
 import { renderGamesPage } from "./modules/games.js";
 import { renderSettingsPage } from "./modules/settings.js";
 import { initPomodoro, togglePomodoro } from "./components/pomodoro.js";
+import { initMusic } from "./modules/music.js";
 import { toast } from "./components/ui.js";
 import { toISODate, escapeHtml } from "./helpers.js";
 import { storage } from "./storage.js";
@@ -345,6 +346,10 @@ async function main() {
     initFab(handleQuickAdd);
     initPomodoro();
 
+    if (getState().currentUser) {
+        initMusic().catch((error) => console.warn("Music init:", error));
+    }
+
     // Re-render chrome (bukan full chrome rebuild yang menimpa auth) saat state berubah
     subscribe(() => {
         renderChrome();
@@ -367,6 +372,7 @@ async function main() {
         renderChrome();
         const path = getCurrentPath();
         navigate(path === "/" || path === "/404" ? "/dashboard" : path, { replace: true });
+        initMusic().catch((error) => console.warn("Music init:", error));
     }, 200);
 
     // Close sidebar drawer saat klik di luar (tablet, jika dibuka programatik)

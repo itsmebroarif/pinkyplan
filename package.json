@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
-    "build": "node -c server.js"
+    "build": "node -c server.js",
+    "music:scan": "node scripts/generate-music-manifest.mjs"
   },
   "dependencies": {
     "express": "^5.2.1"

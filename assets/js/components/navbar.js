@@ -10,6 +10,7 @@ import { logout } from "../modules/auth.js";
 import { navigate } from "../router.js";
 import { toast } from "./ui.js";
 import { togglePomodoro } from "./pomodoro.js";
+import { toggle as toggleMusic, getMusicState } from "../modules/music.js";
 
 /**
  * Render navbar atas.
@@ -36,8 +37,14 @@ export function renderNavbar() {
         </div>
     `);
 
+    const musicState = getMusicState();
     const right = el(`
         <div class="navbar-right">
+            <button type="button" class="navbar-btn music-nav-btn ${musicState.playing ? "music-playing" : ""}" id="music-nav-btn"
+                aria-label="Toggle backsound" aria-pressed="${musicState.playing}"
+                title="${musicState.playing ? "Musik: " + (musicState.track?.title || "") + " (klik pause)" : "Nyalakan backsound"}">
+                ${musicState.playing ? "🎵" : "🔇"}
+            </button>
             <button type="button" class="navbar-btn pomodoro-nav-btn" id="pomodoro-nav-btn" aria-label="Toggle Pomodoro Timer" title="Pomodoro Focus Timer">
                 🍅
             </button>
@@ -53,6 +60,11 @@ export function renderNavbar() {
             </button>
         </div>
     `);
+
+    right.querySelector("#music-nav-btn")?.addEventListener("click", async () => {
+        const playing = await toggleMusic();
+        toast(playing ? "🎵 Backsound on" : "🔇 Backsound off", playing ? "success" : "info", 1500);
+    });
 
     right.querySelector("#pomodoro-nav-btn")?.addEventListener("click", () => {
         togglePomodoro();

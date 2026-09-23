@@ -127,7 +127,7 @@ export async function renderDashboard(container) {
                 <div class="card hoverable span-full" id="dash-quote-card">
                     <div class="card-header">
                         <div class="card-title">💬 Quote of the Day</div>
-                        <button type="button" class="btn btn-sm btn-ghost" id="dash-refresh-quote">🎲</button>
+                        <button type="button" class="btn btn-sm btn-ghost" id="dash-refresh-quote" aria-label="Quote acak">🎲</button>
                     </div>
                     ${quoteCardHtml(quote)}
                 </div>
@@ -137,7 +137,7 @@ export async function renderDashboard(container) {
                         <div class="card-title">📊 Today's Progress</div>
                         <span class="badge ${progress.percent === 100 && progress.total > 0 ? "success" : "pink"}">${progress.percent}%</span>
                     </div>
-                    <div class="progress" role="progressbar" aria-valuenow="${progress.percent}">
+                    <div class="progress" role="progressbar" aria-valuenow="${progress.percent}" aria-valuemin="0" aria-valuemax="100">
                         <div class="progress-bar" style="width:${progress.percent}%"></div>
                     </div>
                     <div class="progress-meta">
@@ -145,24 +145,26 @@ export async function renderDashboard(container) {
                         <span>${progress.pending} pending</span>
                     </div>
 
-                    <div class="dash-section-title" style="margin-top:1.1rem">
+                    <div class="dash-section-title">
                         <span>📋 Quick Todo</span>
-                        <button type="button" class="btn btn-sm btn-primary" id="dash-add-todo">＋</button>
+                        <button type="button" class="btn btn-sm btn-primary" id="dash-add-todo">＋ Tambah</button>
                     </div>
                     <div class="todo-stack" id="dash-todo-list"></div>
                     <form class="quick-add-row" id="dash-quick-form">
                         <input class="input" id="dash-quick-input" placeholder="Quick add todo…" maxlength="120" aria-label="Quick add todo">
-                        <button type="submit" class="btn btn-primary">＋</button>
+                        <button type="submit" class="btn btn-primary" aria-label="Simpan todo">＋</button>
                     </form>
-                    <button type="button" class="btn btn-sm btn-ghost btn-block" style="margin-top:0.6rem" data-goto="/todo">
-                        Lihat semua todo →
-                    </button>
+                    <div class="dash-actions">
+                        <button type="button" class="btn btn-sm btn-ghost btn-block" data-goto="/todo">
+                            Lihat semua todo →
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card hoverable">
                     <div class="card-header">
                         <div class="card-title">📅 Today's Schedule</div>
-                        <button type="button" class="btn btn-sm btn-secondary" id="dash-add-sched">＋</button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="dash-add-sched">＋ Tambah</button>
                     </div>
                     <div id="dash-schedules">
                         ${
@@ -177,15 +179,17 @@ export async function renderDashboard(container) {
                             `
                                 )
                                 .join("")
-                            : `<div class="empty-state" style="padding:1.2rem">
-                                    <div class="empty-icon" style="font-size:2rem">🗓️</div>
+                            : `<div class="empty-state dash-empty-state">
+                                    <div class="empty-icon">🗓️</div>
                                     <p>Belum ada jadwal hari ini.</p>
                                 </div>`
                     }
                     </div>
-                    <button type="button" class="btn btn-sm btn-ghost btn-block" style="margin-top:0.5rem" data-goto="/schedule">
-                        Kelola schedule →
-                    </button>
+                    <div class="dash-actions">
+                        <button type="button" class="btn btn-sm btn-ghost btn-block" data-goto="/schedule">
+                            Kelola schedule →
+                        </button>
+                    </div>
                 </div>
 
                 <div class="card hoverable">
@@ -197,7 +201,7 @@ export async function renderDashboard(container) {
                     <div class="progress">
                         <div class="progress-bar" style="width:${Math.min(100, Math.round((hydration.count / (hydration.goal || hydrationConfig.dailyGoal)) * 100))}%"></div>
                     </div>
-                    <div style="display:flex;gap:0.5rem;margin-top:0.9rem;justify-content:center;flex-wrap:wrap">
+                    <div class="dash-actions">
                         <button type="button" class="btn btn-primary btn-sm" id="dash-water">💧 + Water</button>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto="/hydration">Buka hydration →</button>
                     </div>
@@ -212,7 +216,7 @@ export async function renderDashboard(container) {
                     <div class="progress">
                         <div class="progress-bar" id="dash-meal-bar" style="width:${mealPct}%"></div>
                     </div>
-                    <div id="dash-meal-list" style="margin-top:0.7rem">
+                    <div id="dash-meal-list" class="dash-list">
                         ${
                         meals.length
                             ? meals
@@ -226,10 +230,10 @@ export async function renderDashboard(container) {
                             `
                                 )
                                 .join("")
-                            : `<p class="text-muted" style="font-size:0.88rem;font-weight:700">Belum ada makan tercatat 🍽️</p>`
+                            : `<p class="dash-empty text-muted">Belum ada makan tercatat 🍽️</p>`
                     }
                     </div>
-                    <div style="display:flex;gap:0.5rem;margin-top:0.9rem;justify-content:center;flex-wrap:wrap">
+                    <div class="dash-actions">
                         <button type="button" class="btn btn-primary btn-sm" id="dash-meal-add">🍴 + Makan</button>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto="/meal">Buka meal →</button>
                     </div>
@@ -242,50 +246,50 @@ export async function renderDashboard(container) {
                             ${todayHabitsDone}/${habits.length}
                         </span>
                     </div>
-                    <div class="dash-habit-list" id="dash-habit-list" style="display:flex;flex-direction:column;gap:0.45rem;margin-bottom:0.75rem">
+                    <div class="dash-habit-list" id="dash-habit-list">
                         ${
                             habits.length
                                 ? habits
                                     .slice(0, 4)
                                     .map(
                                         (h) => `
-                                    <div class="dash-habit-item ${h.isCompletedToday ? "done" : ""}" style="display:flex;align-items:center;justify-content:space-between;padding:0.45rem 0.6rem;background:var(--surface-2);border-radius:var(--radius-sm);border-left:4px solid ${h.color}">
-                                        <div style="display:flex;align-items:center;gap:0.45rem;min-width:0">
+                                    <div class="dash-habit-item ${h.isCompletedToday ? "done" : ""}" style="border-left-color:${h.color}">
+                                        <div class="habit-meta">
                                             <span style="font-size:1.1rem">${h.icon}</span>
-                                            <div style="min-width:0">
-                                                <div style="font-weight:800;font-size:0.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escapeHtml(h.name)}</div>
-                                                <div style="font-size:0.7rem;font-weight:700;color:var(--text-muted)">
+                                            <div class="habit-text">
+                                                <div class="habit-name">${escapeHtml(h.name)}</div>
+                                                <div class="habit-streak">
                                                     🔥 Streak: <strong>${h.currentStreak} hari</strong>
                                                 </div>
                                             </div>
                                         </div>
                                         <button type="button" class="btn btn-sm ${h.isCompletedToday ? "btn-secondary" : "btn-primary"}"
-                                            data-dash-habit="${h.id}" style="padding:0.25rem 0.6rem;font-size:0.75rem">
+                                            data-dash-habit="${h.id}">
                                             ${h.isCompletedToday ? "✓ Selesai" : "Tandai"}
                                         </button>
                                     </div>
                                 `
                                     )
                                     .join("")
-                                : `<p class="text-muted" style="font-size:0.85rem;font-weight:700">Belum ada habit harian.</p>`
+                                : `<p class="dash-empty text-muted">Belum ada habit harian.</p>`
                         }
                     </div>
-                    <div style="display:flex;gap:0.5rem;justify-content:center;flex-wrap:wrap">
+                    <div class="dash-actions">
                         <button type="button" class="btn btn-primary btn-sm" id="dash-add-habit">＋ Habit</button>
                         <button type="button" class="btn btn-ghost btn-sm" data-goto="/habits">Buka habit tracker →</button>
                     </div>
                 </div>
 
                 <div class="card hoverable pomo-dash-card" id="dash-pomodoro-card">
-                    <div class="card-header" style="flex-wrap:wrap;gap:0.4rem;align-items:center">
+                    <div class="card-header dash-card-header">
                         <div class="card-title">🍅 Pomodoro Focus</div>
                         <span class="badge ${pomoStats.completedToday > 0 ? "pink" : "purple"}">${pomoStats.completedToday} sesi hari ini</span>
                     </div>
-                    <p class="text-muted" style="font-size:0.84rem;font-weight:700;margin-bottom:0.75rem;line-height:1.4">
+                    <p class="text-muted dash-card-desc">
                         Fokus 25 menit diselingi istirahat teratur untuk menyelesaikan tugas harian tanpa distraksi.
                     </p>
-                    <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
-                        <button type="button" class="btn btn-primary btn-sm btn-block" id="dash-start-pomo" style="min-height:38px">
+                    <div class="dash-actions">
+                        <button type="button" class="btn btn-primary btn-sm btn-block dash-pomo-btn" id="dash-start-pomo">
                             🍅 Buka Pomodoro Timer
                         </button>
                     </div>
@@ -317,9 +321,11 @@ export async function renderDashboard(container) {
                             <div class="stat-label">Activities</div>
                         </div>
                     </div>
-                    <button type="button" class="btn btn-sm btn-secondary btn-block" style="margin-top:0.9rem" data-goto="/statistics">
-                        📊 Buka statistik lengkap
-                    </button>
+                    <div class="dash-actions">
+                        <button type="button" class="btn btn-sm btn-secondary btn-block" data-goto="/statistics">
+                            📊 Buka statistik lengkap
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -415,7 +421,7 @@ function paintDashboardMeals(container) {
             `
                 )
                 .join("")
-            : `<p class="text-muted" style="font-size:0.88rem;font-weight:700">Belum ada makan tercatat 🍽️</p>`;
+            : `<p class="dash-empty text-muted">Belum ada makan tercatat 🍽️</p>`;
     }
 }
 
@@ -432,7 +438,7 @@ function paintDashboardTodos(container) {
     const todos = filterTodos({ date: today }).slice(0, 6);
 
     if (!todos.length) {
-        listEl.innerHTML = `<p class="text-muted" style="font-size:0.88rem;font-weight:700">Belum ada todo hari ini ✨</p>`;
+        listEl.innerHTML = `<p class="dash-empty text-muted">Belum ada todo hari ini ✨</p>`;
         return;
     }
 

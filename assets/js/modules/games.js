@@ -58,15 +58,15 @@ export function renderGamesPage(container) {
                 <div class="games-hero-content">
                     <span class="games-eyebrow">Material · Three.js · No game over</span>
                     <h1>Games</h1>
-                    <p>Jelajahi 3 dunia 3D sambil jalan-jalan. Kontrol ${isTouchDevice() ? "analog di layar" : "WASD + mouse"}.</p>
+                    <p>Jelajahi 3 dunia 3D sambil jalan-jalan — ketemu banyak NPC. Kontrol ${isTouchDevice() ? "analog di layar" : "WASD + mouse"}.</p>
                 </div>
             </header>
 
             <div class="games-controls-hint" role="note">
                 ${
                 isTouchDevice()
-                    ? `<span class="chip-pill">📱 Analog kiri: jalan</span><span class="chip-pill">👆 Geser layar: lihat</span><span class="chip-pill">🚀 Tombol: lari</span>`
-                    : `<span class="chip-pill">⌨️ WASD / Panah: jalan</span><span class="chip-pill">🖱️ Drag / klik: lihat</span><span class="chip-pill">⇧ Shift: lari</span>`
+                    ? `<span class="chip-pill">📱 Analog kiri: jalan</span><span class="chip-pill">👆 Geser layar: lihat</span><span class="chip-pill">🚀 Tombol: lari</span><span class="chip-pill">🚶 Banyak NPC</span>`
+                    : `<span class="chip-pill">⌨️ WASD / Panah: jalan</span><span class="chip-pill">🖱️ Drag / klik: lihat</span><span class="chip-pill">⇧ Shift: lari</span><span class="chip-pill">🚶 Banyak NPC</span>`
                 }
             </div>
 
@@ -172,7 +172,7 @@ function startWorldSession(THREE, meta) {
         </div>
         <div class="world-hint" id="world-hint">${
             isTouchDevice()
-                ? "Analog kiri untuk jalan · geser area kanan untuk melihat"
+                ? "Analog kiri untuk jalan · geser area kanan untuk melihat · tombol 🚀 lari"
                 : "Klik canvas untuk fokus · WASD jalan · Shift lari · Esc lepas mouse"
         }</div>
         <div class="world-joystick" id="world-joystick" hidden>
@@ -240,7 +240,11 @@ function startWorldSession(THREE, meta) {
     window.addEventListener("resize", resize);
 
     /* ---------- Keyboard ---------- */
+    const isTypingTarget = (t) =>
+        !!t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable);
+
     const onKeyDown = (e) => {
+        if (isTypingTarget(e.target)) return;
         keys[e.code] = true;
         if (e.code === "Escape") exit();
         if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Space"].includes(e.code)) e.preventDefault();
@@ -248,8 +252,14 @@ function startWorldSession(THREE, meta) {
     const onKeyUp = (e) => {
         keys[e.code] = false;
     };
+    const clearAllKeys = () => {
+        for (const k of Object.keys(keys)) keys[k] = false;
+        lookState.dragging = false;
+        joyEnd();
+    };
     window.addEventListener("keydown", onKeyDown);
     window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", clearAllKeys);
 
     /* ---------- Mouse look (drag / pointer lock) ---------- */
     const onMouseDown = (e) => {
@@ -285,10 +295,24 @@ function startWorldSession(THREE, meta) {
         player.yaw -= dx * 0.0035;
         player.pitch -= dy * 0.003;
         player.pitch = Math.max(-1.2, Math.min(1.1, player.pitch));
+        // Normalisasi yaw agar tidak drift tak terbatas
+        if (player.yaw > Math.PI * 2 || player.yaw < -Math.PI * 2) {
+            player.yaw = Math.atan2(Math.sin(player.yaw), Math.cos(player.yaw));
+        }
     }
 
     /* ---------- Touch: joystick + look ---------- */
     const joyBase = joy.querySelector(".joy-base");
+    const JOY_DEADZONE = 0.16;
+
+    /** Terapkan deadzone + response curve halus untuk analog. */
+    const applyJoyAxis = (v) => {
+        const a = Math.abs(v);
+        if (a < JOY_DEADZONE) return 0;
+        const n = (a - JOY_DEADZONE) / (1 - JOY_DEADZONE);
+        const curved = n * n * (3 - 2 * n);
+        return Math.sign(v) * curved;
+    };
 
     const joyStart = (e) => {
         const t = e.changedTouches ? e.changedTouches[0] : e;
@@ -319,8 +343,8 @@ function startWorldSession(THREE, meta) {
             dy = (dy / len) * max;
         }
         knob.style.transform = `translate(${dx}px, ${dy}px)`;
-        joyState.x = dx / max;
-        joyState.y = dy / max;
+        joyState.x = applyJoyAxis(dx / max);
+        joyState.y = applyJoyAxis(dy / max);
     };
     const joyEnd = () => {
         joyState.active = false;
@@ -333,6 +357,9 @@ function startWorldSession(THREE, meta) {
     joy.addEventListener("touchmove", joyMove, { passive: false });
     joy.addEventListener("touchend", joyEnd);
     joy.addEventListener("touchcancel", joyEnd);
+    joy.addEventListener("mousedown", joyStart);
+    window.addEventListener("mousemove", joyMove);
+    window.addEventListener("mouseup", joyEnd);
 
     // Look: geser di canvas (bukan joystick)
     const onTouchStart = (e) => {
@@ -347,7 +374,7 @@ function startWorldSession(THREE, meta) {
     const onTouchMove = (e) => {
         for (const t of e.changedTouches) {
             if (t.identifier !== lookState.id) continue;
-            applyLook((t.clientX - lookState.lastX) * 1.6, (t.clientY - lookState.lastY) * 1.6);
+            applyLook((t.clientX - lookState.lastX) * 1.2, (t.clientY - lookState.lastY) * 1.2);
             lookState.lastX = t.clientX;
             lookState.lastY = t.clientY;
         }
@@ -386,9 +413,13 @@ function startWorldSession(THREE, meta) {
         window.removeEventListener("resize", resize);
         window.removeEventListener("keydown", onKeyDown);
         window.removeEventListener("keyup", onKeyUp);
+        window.removeEventListener("blur", clearAllKeys);
         window.removeEventListener("mousemove", onMouseMove);
         window.removeEventListener("mouseup", onMouseUp);
+        window.removeEventListener("mousemove", joyMove);
+        window.removeEventListener("mouseup", joyEnd);
         if (document.pointerLockElement === canvas) document.exitPointerLock?.();
+        built.dispose?.(THREE, scene);
         // dispose geometries/materials
         scene.traverse((obj) => {
             if (obj.geometry) obj.geometry.dispose?.();
@@ -415,18 +446,36 @@ function startWorldSession(THREE, meta) {
     const forward = new THREE.Vector3();
     const right = new THREE.Vector3();
     const wish = new THREE.Vector3();
+    let lastTickTime = performance.now();
 
-    const tick = () => {
-        if (disposed) return;
-        raf = requestAnimationFrame(tick);
-
-        // Input vector (-1..1)
+    /**
+     * Baca input keyboard → (ix, iz) dalam rentang -1..1.
+     * W/↑ maju (iz-), S/↓ mundur (iz+), A/← kiri (ix-), D/→ kanan (ix+).
+     *
+     * @returns {{ix:number, iz:number}}
+     */
+    const readKeyboardAxis = () => {
         let ix = 0;
         let iz = 0;
         if (keys.KeyW || keys.ArrowUp) iz -= 1;
         if (keys.KeyS || keys.ArrowDown) iz += 1;
         if (keys.KeyA || keys.ArrowLeft) ix -= 1;
         if (keys.KeyD || keys.ArrowRight) ix += 1;
+        return { ix, iz };
+    };
+
+    const tick = () => {
+        if (disposed) return;
+        raf = requestAnimationFrame(tick);
+
+        const now = performance.now();
+        const dt = Math.min(0.05, Math.max(0.001, (now - lastTickTime) / 1000));
+        lastTickTime = now;
+
+        // Input keyboard (prioritas penuh 1.0) + analog (sudah deadzone & curve)
+        const kb = readKeyboardAxis();
+        let ix = kb.ix;
+        let iz = kb.iz;
         if (joyState.active) {
             ix += joyState.x;
             iz += joyState.y;
@@ -440,16 +489,20 @@ function startWorldSession(THREE, meta) {
         const running = runToggle || keys.ShiftLeft || keys.ShiftRight;
         const speed = running ? 7.2 : 3.6;
 
+        // WASD relatif kamera: forward = arah pandang horizontal, right = 90° kanan
         forward.set(Math.sin(player.yaw), 0, Math.cos(player.yaw));
         right.set(Math.cos(player.yaw), 0, -Math.sin(player.yaw));
         wish.set(0, 0, 0);
+        // iz- (W) → maju, iz+ (S) → mundur; ix- (A) → kiri, ix+ (D) → kanan
         wish.addScaledVector(forward, -iz);
         wish.addScaledVector(right, ix);
         if (wish.lengthSq() > 0) wish.normalize().multiplyScalar(speed);
 
-        player.vel.lerp(wish, 0.18);
-        player.pos.x += player.vel.x * 0.016;
-        player.pos.z += player.vel.z * 0.016;
+        // Smooth velocity berbasis dt (frame-rate independent)
+        const smooth = 1 - Math.exp(-14 * dt);
+        player.vel.lerp(wish, smooth);
+        player.pos.x += player.vel.x * dt;
+        player.pos.z += player.vel.z * dt;
 
         // Bounds
         const b = built.bounds;
@@ -458,7 +511,7 @@ function startWorldSession(THREE, meta) {
 
         // Head bob
         const moving = wish.lengthSq() > 0.2;
-        if (moving) bobT += 0.12 * (running ? 1.4 : 1);
+        if (moving) bobT += 8.5 * dt * (running ? 1.4 : 1);
         const bob = moving ? Math.sin(bobT) * 0.035 : 0;
 
         camera.position.set(player.pos.x, player.eye + bob, player.pos.z);
@@ -469,7 +522,7 @@ function startWorldSession(THREE, meta) {
         );
         camera.lookAt(camera.position.clone().add(look));
 
-        if (built.tick) built.tick(THREE, scene, performance.now());
+        if (built.tick) built.tick(THREE, scene, now, dt);
 
         if (coordsEl) {
             coordsEl.textContent = `${player.pos.x.toFixed(1)}, ${player.pos.z.toFixed(1)}`;
@@ -526,6 +579,236 @@ function groundPlane(THREE, scene, color, size = 80) {
     mesh.receiveShadow = true;
     scene.add(mesh);
     return mesh;
+}
+
+/* =========================================================
+   NPCs — pejalan kaki sederhana dengan animasi kaki/lengan
+   ========================================================= */
+
+/** @type {Array<{group:Object, parts:Object, state:Object}>} NPC aktif per world. */
+const activeNpcs = [];
+
+/**
+ * Buat satu NPC humanoid sederhana.
+ *
+ * @param {Object} THREE
+ * @param {{x:number, z:number, shirt?:string, pants?:string, skin?:string, hair?:string, scale?:number}} opts
+ * @returns {{group:Object, parts:Object, state:Object}}
+ */
+function makeNpc(THREE, opts) {
+    const scale = opts.scale ?? 1;
+    const shirt = opts.shirt ?? "#EC407A";
+    const pants = opts.pants ?? "#37474F";
+    const skin = opts.skin ?? "#FFCC80";
+    const hair = opts.hair ?? "#3E2723";
+
+    const g = new THREE.Group();
+    const mat = (c, rough = 0.85) => new THREE.MeshStandardMaterial({ color: c, roughness: rough });
+
+    // Legs (pivot di pinggul agar bisa diayun)
+    const legGeo = new THREE.BoxGeometry(0.18 * scale, 0.55 * scale, 0.18 * scale);
+    const legL = new THREE.Mesh(legGeo, mat(pants));
+    legL.position.set(-0.11 * scale, 0.55 * scale, 0);
+    legL.geometry.translate(0, -0.275 * scale, 0);
+    legL.position.y = 0.55 * scale;
+    const legR = legL.clone();
+    legR.position.x = 0.11 * scale;
+    legL.castShadow = legR.castShadow = true;
+
+    // Body
+    const body = new THREE.Mesh(
+        new THREE.BoxGeometry(0.48 * scale, 0.55 * scale, 0.28 * scale),
+        mat(shirt)
+    );
+    body.position.y = 0.95 * scale;
+    body.castShadow = true;
+
+    // Arms (pivot di bahu)
+    const armGeo = new THREE.BoxGeometry(0.14 * scale, 0.48 * scale, 0.14 * scale);
+    armGeo.translate(0, -0.2 * scale, 0);
+    const armL = new THREE.Mesh(armGeo, mat(shirt));
+    armL.position.set(-0.32 * scale, 1.15 * scale, 0);
+    const armR = new THREE.Mesh(armGeo.clone(), mat(shirt));
+    armR.position.set(0.32 * scale, 1.15 * scale, 0);
+    armL.castShadow = armR.castShadow = true;
+
+    // Head
+    const head = new THREE.Mesh(new THREE.SphereGeometry(0.2 * scale, 12, 10), mat(skin, 0.7));
+    head.position.y = 1.42 * scale;
+    head.castShadow = true;
+
+    // Hair cap
+    const hairMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(0.21 * scale, 12, 8, 0, Math.PI * 2, 0, Math.PI * 0.55),
+        mat(hair)
+    );
+    hairMesh.position.y = 1.45 * scale;
+
+    // Eyes
+    const eyeGeo = new THREE.SphereGeometry(0.03 * scale, 6, 6);
+    const eyeMat = new THREE.MeshStandardMaterial({ color: "#212121" });
+    const eyeL = new THREE.Mesh(eyeGeo, eyeMat);
+    eyeL.position.set(-0.07 * scale, 1.44 * scale, 0.17 * scale);
+    const eyeR = new THREE.Mesh(eyeGeo.clone(), eyeMat);
+    eyeR.position.set(0.07 * scale, 1.44 * scale, 0.17 * scale);
+
+    g.add(legL, legR, body, armL, armR, head, hairMesh, eyeL, eyeR);
+    g.position.set(opts.x, 0, opts.z);
+
+    const state = {
+        homeX: opts.x,
+        homeZ: opts.z,
+        targetX: opts.x,
+        targetZ: opts.z,
+        speed: 0.7 + Math.random() * 0.7,
+        phase: Math.random() * Math.PI * 2,
+        waitT: Math.random() * 3,
+        wanderR: 6 + Math.random() * 10
+    };
+
+    return { group: g, parts: { legL, legR, armL, armR, head }, state };
+}
+
+/**
+ * Spawn banyak NPC tersebar di area world.
+ *
+ * @param {Object} THREE
+ * @param {Object} scene
+ * @param {{count:number, bounds:{minX:number,maxX:number,minZ:number,maxZ:number}, palette:Array, avoid?:{x:number,z:number,r:number}}} opts
+ * @returns {Array} Daftar NPC.
+ */
+function spawnNpcs(THREE, scene, opts) {
+    const list = [];
+    const palette = opts.palette || [
+        { shirt: "#EC407A", pants: "#37474F" },
+        { shirt: "#42A5F5", pants: "#263238" },
+        { shirt: "#66BB6A", pants: "#4E342E" },
+        { shirt: "#FFA726", pants: "#37474F" },
+        { shirt: "#AB47BC", pants: "#263238" },
+        { shirt: "#26C6DA", pants: "#4E342E" },
+        { shirt: "#EF5350", pants: "#37474F" },
+        { shirt: "#D4E157", pants: "#263238" }
+    ];
+    const skins = ["#FFCC80", "#FFB74D", "#FFE0B2", "#D7A86E"];
+    const hairs = ["#3E2723", "#212121", "#5D4037", "#4E342E", "#B71C1C"];
+
+    for (let i = 0; i < opts.count; i++) {
+        let x = 0;
+        let z = 0;
+        let ok = false;
+        for (let tries = 0; tries < 20 && !ok; tries++) {
+            x = opts.bounds.minX + Math.random() * (opts.bounds.maxX - opts.bounds.minX);
+            z = opts.bounds.minZ + Math.random() * (opts.bounds.maxZ - opts.bounds.minZ);
+            if (opts.avoid) {
+                const d = Math.hypot(x - opts.avoid.x, z - opts.avoid.z);
+                ok = d > opts.avoid.r;
+            } else ok = true;
+            // Jangan terlalu dekat NPC lain
+            if (ok) {
+                for (const n of list) {
+                    if (Math.hypot(x - n.state.homeX, z - n.state.homeZ) < 3) {
+                        ok = false;
+                        break;
+                    }
+                }
+            }
+        }
+        const c = palette[i % palette.length];
+        const npc = makeNpc(THREE, {
+            x,
+            z,
+            shirt: c.shirt,
+            pants: c.pants,
+            skin: skins[i % skins.length],
+            hair: hairs[i % hairs.length],
+            scale: 0.9 + Math.random() * 0.2
+        });
+        npc.state.targetX = x;
+        npc.state.targetZ = z;
+        scene.add(npc.group);
+        list.push(npc);
+        activeNpcs.push(npc);
+    }
+    return list;
+}
+
+/**
+ * Update pergerakan + animasi NPC setiap frame.
+ *
+ * @param {Array} npcs - Daftar NPC.
+ * @param {number} dt - Delta time detik.
+ * @param {Object} [bounds] - Batas world opsional.
+ */
+function tickNpcs(npcs, dt, bounds) {
+    for (const n of npcs) {
+        const s = n.state;
+        const p = n.group.position;
+
+        if (s.waitT > 0) {
+            s.waitT -= dt;
+        } else {
+            const dx = s.targetX - p.x;
+            const dz = s.targetZ - p.z;
+            const dist = Math.hypot(dx, dz);
+
+            if (dist < 0.35) {
+                // Pilih target baru di sekitar home
+                const ang = Math.random() * Math.PI * 2;
+                const r = Math.random() * s.wanderR;
+                s.targetX = s.homeX + Math.cos(ang) * r;
+                s.targetZ = s.homeZ + Math.sin(ang) * r;
+                if (bounds) {
+                    s.targetX = Math.max(bounds.minX + 1, Math.min(bounds.maxX - 1, s.targetX));
+                    s.targetZ = Math.max(bounds.minZ + 1, Math.min(bounds.maxZ - 1, s.targetZ));
+                }
+                s.waitT = 1 + Math.random() * 4;
+            } else {
+                const step = Math.min(dist, s.speed * dt);
+                p.x += (dx / dist) * step;
+                p.z += (dz / dist) * step;
+                // Hadap arah jalan
+                n.group.rotation.y = Math.atan2(dx, dz);
+                // Ayun kaki & lengan
+                s.phase += dt * s.speed * 6;
+                const swing = Math.sin(s.phase) * 0.55;
+                n.parts.legL.rotation.x = swing;
+                n.parts.legR.rotation.x = -swing;
+                n.parts.armL.rotation.x = -swing * 0.7;
+                n.parts.armR.rotation.x = swing * 0.7;
+            }
+        }
+
+        // Idle bob ringan saat berhenti
+        if (s.waitT > 0) {
+            n.parts.legL.rotation.x *= 0.9;
+            n.parts.legR.rotation.x *= 0.9;
+            n.parts.armL.rotation.x *= 0.9;
+            n.parts.armR.rotation.x *= 0.9;
+            n.parts.head.position.y = (n.parts.head.userData.baseY ?? n.parts.head.position.y);
+        }
+    }
+}
+
+/**
+ * Bersihkan NPC dari scene (saat ganti/exit world).
+ *
+ * @param {Object} THREE
+ * @param {Object} scene
+ * @param {Array} npcs
+ */
+function clearNpcs(THREE, scene, npcs) {
+    for (const n of npcs) {
+        scene.remove(n.group);
+        n.group.traverse((obj) => {
+            if (obj.geometry) obj.geometry.dispose?.();
+            if (obj.material) {
+                const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+                mats.forEach((m) => m.dispose?.());
+            }
+        });
+        const idx = activeNpcs.indexOf(n);
+        if (idx >= 0) activeNpcs.splice(idx, 1);
+    }
 }
 
 function makeTree(THREE, x, z, scale = 1) {
@@ -691,12 +974,29 @@ function buildParkWorld(THREE, scene) {
     );
     scene.add(birds);
 
+    // NPCs — pejalan taman
+    const npcs = spawnNpcs(THREE, scene, {
+        count: 16,
+        bounds: { minX: -38, maxX: 38, minZ: -38, maxZ: 38 },
+        avoid: { x: 0, z: 0, r: 5 },
+        palette: [
+            { shirt: "#EC407A", pants: "#37474F" },
+            { shirt: "#42A5F5", pants: "#263238" },
+            { shirt: "#66BB6A", pants: "#4E342E" },
+            { shirt: "#FFA726", pants: "#37474F" },
+            { shirt: "#AB47BC", pants: "#263238" },
+            { shirt: "#26C6DA", pants: "#4E342E" },
+            { shirt: "#EF5350", pants: "#37474F" },
+            { shirt: "#D4E157", pants: "#263238" }
+        ]
+    });
+
     return {
         bg,
         fog: scene.fog,
         spawn: [0, 0, 12, Math.PI],
         bounds: { minX: -42, maxX: 42, minZ: -42, maxZ: 42 },
-        tick(THREE, scene, t) {
+        tick(THREE, scene, t, dt = 0.016) {
             const p = drops.geometry.attributes.position;
             for (let i = 0; i < N; i++) {
                 let y = p.getY(i) - 0.04;
@@ -713,6 +1013,11 @@ function buildParkWorld(THREE, scene) {
                 bp.setXYZ(i, Math.cos(a) * r, 14 + Math.sin(a * 2 + i) * 2, Math.sin(a) * r);
             }
             bp.needsUpdate = true;
+
+            tickNpcs(npcs, dt, { minX: -38, maxX: 38, minZ: -38, maxZ: 38 });
+        },
+        dispose(THREE, scene) {
+            clearNpcs(THREE, scene, npcs);
         }
     };
 }
@@ -845,12 +1150,29 @@ function buildServerWorld(THREE, scene) {
     scanLight.position.set(0, 5, 0);
     scene.add(scanLight);
 
+    // NPCs — teknisi / pengunjung data center
+    const npcs = spawnNpcs(THREE, scene, {
+        count: 14,
+        bounds: { minX: -30, maxX: 30, minZ: -30, maxZ: 30 },
+        avoid: { x: 0, z: 0, r: 4 },
+        palette: [
+            { shirt: "#00ACC1", pants: "#263238" },
+            { shirt: "#26C6DA", pants: "#1b263b" },
+            { shirt: "#1DE9B6", pants: "#263238" },
+            { shirt: "#78909C", pants: "#1b263b" },
+            { shirt: "#4FC3F7", pants: "#263238" },
+            { shirt: "#80CBC4", pants: "#1b263b" },
+            { shirt: "#B2EBF2", pants: "#263238" },
+            { shirt: "#4DD0E1", pants: "#1b263b" }
+        ]
+    });
+
     return {
         bg,
         fog: scene.fog,
         spawn: [0, 0, 28, Math.PI],
         bounds: { minX: -32, maxX: 32, minZ: -32, maxZ: 32 },
-        tick(THREE, scene, t) {
+        tick(THREE, scene, t, dt = 0.016) {
             leds.forEach((l, i) => {
                 const on = Math.sin(t * 0.004 + l.phase + i) > -0.2;
                 l.mesh.material.emissiveIntensity = on ? 2.2 : 0.15;
@@ -858,6 +1180,10 @@ function buildServerWorld(THREE, scene) {
                 l.mesh.material.color.set(on ? 0x76ff03 : 0xff1744);
             });
             scanLight.intensity = 1.0 + Math.sin(t * 0.003) * 0.4;
+            tickNpcs(npcs, dt, { minX: -30, maxX: 30, minZ: -30, maxZ: 30 });
+        },
+        dispose(THREE, scene) {
+            clearNpcs(THREE, scene, npcs);
         }
     };
 }
@@ -1032,18 +1358,41 @@ function buildCityWorld(THREE, scene) {
     moon.position.set(40, 55, -60);
     scene.add(moon);
 
+    // NPCs — pejalan kota malam
+    const npcs = spawnNpcs(THREE, scene, {
+        count: 20,
+        bounds: { minX: -44, maxX: 44, minZ: -44, maxZ: 44 },
+        avoid: { x: 0, z: 0, r: 4 },
+        palette: [
+            { shirt: "#FF69B4", pants: "#212121" },
+            { shirt: "#B388FF", pants: "#263238" },
+            { shirt: "#40C4FF", pants: "#212121" },
+            { shirt: "#69F0AE", pants: "#263238" },
+            { shirt: "#FFD740", pants: "#212121" },
+            { shirt: "#FF8A65", pants: "#263238" },
+            { shirt: "#E040FB", pants: "#212121" },
+            { shirt: "#18FFFF", pants: "#263238" },
+            { shirt: "#FF5252", pants: "#212121" },
+            { shirt: "#7C4DFF", pants: "#263238" }
+        ]
+    });
+
     return {
         bg,
         fog: scene.fog,
         spawn: [0, 0, 20, Math.PI],
         bounds: { minX: -48, maxX: 48, minZ: -48, maxZ: 48 },
-        tick(THREE, scene, t) {
+        tick(THREE, scene, t, dt = 0.016) {
             neons.forEach((n, i) => {
                 n.material.emissiveIntensity = 1.1 + Math.sin(t * 0.004 + i) * 0.5;
             });
             lampMats.forEach((m, i) => {
                 m.emissiveIntensity = 1.4 + Math.sin(t * 0.002 + i) * 0.15;
             });
+            tickNpcs(npcs, dt, { minX: -44, maxX: 44, minZ: -44, maxZ: 44 });
+        },
+        dispose(THREE, scene) {
+            clearNpcs(THREE, scene, npcs);
         }
     };
 }

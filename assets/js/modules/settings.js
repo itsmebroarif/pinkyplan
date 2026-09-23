@@ -11,6 +11,9 @@ import { toast } from "../components/ui.js";
 import { escapeHtml, formatDateLong } from "../helpers.js";
 import { logout } from "./auth.js";
 import { navigate } from "../router.js";
+import { reportButtonHtml, bindReportButton } from "./report.js";
+import { musicSettingsHtml, bindMusicSettings } from "./music.js";
+import { appConfig as appCfg } from "../config.js";
 
 /**
  * Render halaman Settings (termasuk Support / Trakteer).
@@ -131,6 +134,32 @@ export function renderSettingsPage(container) {
                 </div>
             </section>
 
+            <!-- Music / Backsound -->
+            ${appCfg.features.music ? `
+            <section class="settings-section card soft">
+                <h2>🎵 Music (Backsound)</h2>
+                <p style="margin:-0.4rem 0 0.8rem;font-size:0.85rem;opacity:0.8">
+                    Auto-detect MP3 dari <code>assets/music/</code> — lihat
+                    <a href="./assets/music/README.md" target="_blank" rel="noopener">dokumentasi</a>
+                </p>
+                ${musicSettingsHtml()}
+            </section>
+            ` : ""}
+
+            <!-- Summary Report -->
+            <section class="settings-section card soft">
+                <h2>📤 Summary Report</h2>
+                <div class="settings-row">
+                    <div class="row-info">
+                        <div class="row-title">Kirim ringkasan via WhatsApp</div>
+                        <div class="row-desc">Todo, schedule, hydration, habits & meals hari ini — otomatis ke nomor user login</div>
+                    </div>
+                    <div style="text-align:right">
+                        ${reportButtonHtml({ className: "btn btn-sm btn-primary" })}
+                    </div>
+                </div>
+            </section>
+
             <!-- Support -->
             <section class="settings-section">
                 <h2 style="display:flex;align-items:center;gap:0.45rem;font-size:1.05rem;margin-bottom:0.75rem">💛 Support</h2>
@@ -171,6 +200,9 @@ export function renderSettingsPage(container) {
  * @param {HTMLElement} container - Page content.
  */
 function bindSettingsEvents(container) {
+    bindReportButton(container);
+    bindMusicSettings(container);
+
     // Theme switch manual
     container.querySelectorAll("[data-theme-set]").forEach((btn) => {
         btn.addEventListener("click", () => {

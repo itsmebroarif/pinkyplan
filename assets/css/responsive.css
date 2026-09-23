@@ -120,7 +120,6 @@
 /* ---------- Tablet ---------- */
 @media (min-width: 768px) {
     .page-content {
-        width: min(100% - 2.5rem, var(--max-content));
         padding-bottom: calc(var(--bottomnav-h) + 2rem);
     }
 
@@ -140,7 +139,6 @@
     }
 
     .page-content {
-        width: min(100% - 3rem, var(--max-content));
         padding-bottom: 3rem;
     }
 
@@ -148,8 +146,9 @@
         padding-inline: 1.5rem;
     }
 
+    /* Dashboard: dua kolom seimbang agar card tidak serong ke kanan */
     .dash-grid {
-        grid-template-columns: 1.5fr 1fr;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
     .chart-grid {
@@ -164,7 +163,7 @@
 /* ---------- Large desktop — jaga proporsi ---------- */
 @media (min-width: 1440px) {
     .page-content {
-        width: min(100% - 3rem, 1280px);
+        max-width: 1280px;
     }
 }
 

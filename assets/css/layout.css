@@ -195,6 +195,50 @@
     box-shadow: none;
 }
 
+.navbar-btn.music-playing {
+    background: var(--primary-light);
+    box-shadow: 3px 3px 0 var(--primary-dark);
+}
+
+.navbar-btn.music-playing::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    right: 5px;
+    width: 8px;
+    height: 8px;
+    background: var(--success);
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+}
+
+/* Mini equalizer hint (opsional, dipakai navbar/music module) */
+.navbar-btn .music-eq {
+    position: absolute;
+    bottom: 3px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 8px;
+}
+
+.navbar-btn .music-eq i {
+    width: 3px;
+    background: var(--primary-dark);
+    border-radius: 1px;
+    animation: eq-bounce 0.8s ease-in-out infinite;
+}
+
+.navbar-btn .music-eq i:nth-child(2) { animation-delay: 0.15s; }
+.navbar-btn .music-eq i:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes eq-bounce {
+    0%, 100% { height: 3px; }
+    50% { height: 8px; }
+}
+
 .navbar-btn .dot {
     position: absolute;
     top: 6px;
@@ -250,11 +294,13 @@
 }
 
 /* ---------- Page content ---------- */
+/* Selalu center di available space (setelah sidebar offset di .main-column) */
 .page-content {
     flex: 1;
-    width: min(100% - 1.5rem, var(--max-content));
+    width: min(100%, var(--max-content));
+    max-width: var(--max-content);
     margin-inline: auto;
-    padding: 1.4rem 0 calc(var(--bottomnav-h) + 2rem);
+    padding: 1.4rem clamp(0.75rem, 2.5vw, 1.5rem) calc(var(--bottomnav-h) + 2rem);
     outline: none;
 }
 

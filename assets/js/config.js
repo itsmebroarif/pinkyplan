@@ -16,6 +16,7 @@ export const appConfig = {
         meal: true,
         games: true,
         notifications: true,
+        music: true,
         pwa: false
     }
 };
@@ -112,6 +113,50 @@ export const mealConfig = {
 export const supportConfig = {
     trakteerUrl: "https://trakteer.id/itsmebroarif/tip?open=true",
     trakteerLabel: "Trakteer — Tip untuk Arif ☕"
+};
+
+/**
+ * Konfigurasi Send Summary Report (WhatsApp).
+ * Nomor tujuan otomatis dipilih berdasarkan user yang login.
+ */
+export const reportConfig = {
+    /** Login Arum → kirim ke nomor ini */
+    arum: {
+        phone: "6285817048266",
+        label: "Arum"
+    },
+    /** Login Arif → kirim ke nomor ini */
+    arif: {
+        phone: "6281318192351",
+        label: "Arif"
+    },
+    /** Fallback bila belum login */
+    default: {
+        phone: "081318192351",
+        label: "Arif"
+    }
+};
+
+/**
+ * Konfigurasi background music (backsound).
+ * Folder MP3: assets/music/ — auto-detect via /api/music atau manifest.json.
+ * Dokumentasi lengkap: assets/music/README.md
+ */
+export const musicConfig = {
+    /** Folder relatif tempat user menaruh file MP3. */
+    folder: "assets/music",
+    /** Endpoint auto-scan (local dev / Express). */
+    apiEndpoint: "/api/music",
+    /** Fallback manifest untuk static hosting (Netlify/Vercel). */
+    manifestUrl: "assets/music/manifest.json",
+    /** Ekstensi yang di-scan. */
+    extensions: [".mp3", ".m4a", ".ogg", ".wav"],
+    /** Volume default 0..1. */
+    defaultVolume: 0.32,
+    /** Coba autoplay backsound. */
+    autoplay: true,
+    /** Loop playlist. */
+    loop: true
 };
 
 /**

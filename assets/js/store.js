@@ -3,7 +3,7 @@
  * Seluruh data utama dibaca/ditulis lewat store agar tidak tersebar.
  */
 import { storage } from "./storage.js";
-import { defaultCategories, hydrationConfig } from "./config.js";
+import { defaultCategories, hydrationConfig, musicConfig } from "./config.js";
 import { uid, toISODate } from "./helpers.js";
 
 /** Default daily habits untuk pengguna baru */
@@ -93,12 +93,17 @@ export function loadState() {
     appState.todos = storage.get("todos", []);
     appState.schedules = storage.get("schedules", []);
     appState.habits = storage.get("habits", defaultHabits);
-    appState.settings = storage.get("settings", {
+    const settingsDefaults = {
         theme: null,
         animation: true,
         notifications: false,
-        hydrationGoal: hydrationConfig.dailyGoal
-    });
+        hydrationGoal: hydrationConfig.dailyGoal,
+        musicEnabled: true,
+        musicAutoplay: musicConfig.autoplay,
+        musicVolume: musicConfig.defaultVolume,
+        musicTrackIndex: 0
+    };
+    appState.settings = { ...settingsDefaults, ...storage.get("settings", {}) };
     appState.quotes = storage.get("quotes", []);
     appState.statsHistory = storage.get("statsHistory", {});
     appState.meals = storage.get("meals", []);

@@ -4,6 +4,7 @@
 import { getTodos, getStatsHistory, getHydration, getCategories, filterTodos, getSchedules } from "../store.js";
 import { toISODate, calcProgress, escapeHtml } from "../helpers.js";
 import { appConfig } from "../config.js";
+import { reportButtonHtml, bindReportButton } from "./report.js";
 
 /**
  * Render halaman Statistics.
@@ -22,6 +23,9 @@ export async function renderStatisticsPage(container) {
                 <div>
                     <h1>📊 Statistics</h1>
                     <p class="page-desc">Productivity overview dengan D3.js</p>
+                </div>
+                <div class="page-header-actions" style="text-align:right">
+                    ${reportButtonHtml({ className: "btn btn-primary" })}
                 </div>
             </div>
 
@@ -100,6 +104,7 @@ export async function renderStatisticsPage(container) {
         </div>
     `;
 
+    bindReportButton(container);
     await renderCharts(container, { todos, progress, overdue });
 }
 
